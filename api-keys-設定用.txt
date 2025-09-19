@@ -1,0 +1,25 @@
+Supabase API設定用の情報
+
+以下の情報をsupabase-client.jsファイルの6-7行目に設定してください：
+
+1. Project URL を探す場所：
+   - Settings > API ページの上部
+   - 「Project URL」という項目
+   - 例: https://xxxxxx.supabase.co
+
+2. anon publicキー：
+   - 「anon public」と書かれた欄のキー
+   - eyJhbGciOi... で始まる長い文字列
+   - Copyボタンでコピー可能
+
+設定方法：
+1. supabase-client.jsファイルを開く
+2. 6行目の YOUR_SUPABASE_URL を Project URL に置き換え
+3. 7行目の YOUR_SUPABASE_ANON_KEY を anon public キーに置き換え
+4. ファイルを保存
+
+例：
+this.SUPABASE_URL = 'https://abcdefg.supabase.co';
+this.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
+
+注意：service_role (secret) キーは使用しません。

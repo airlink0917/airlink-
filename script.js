@@ -35,6 +35,7 @@ class ScheduleManager {
 
     saveEvents() {
         localStorage.setItem('scheduleEvents', JSON.stringify(this.events));
+        // Supabaseには個別に保存（addEventやdeleteEventで処理）
     }
 
     saveUndoState() {
@@ -93,16 +94,26 @@ class ScheduleManager {
         return stored ? JSON.parse(stored) : ['', '', '', '', '', '', '', '', ''];
     }
 
-    saveStaffMembers() {
+    async saveStaffMembers() {
         localStorage.setItem('staffMembers', JSON.stringify(this.staffMembers));
+
+        // Supabaseに保存
+        if (typeof supabaseSync !== 'undefined' && supabaseSync.syncEnabled) {
+            await supabaseSync.saveStaffMembers(this.staffMembers);
+        }
     }
 
     loadCampaignMemo() {
         return localStorage.getItem('campaignMemo') || '';
     }
 
-    saveCampaignMemo(memo) {
+    async saveCampaignMemo(memo) {
         localStorage.setItem('campaignMemo', memo);
+
+        // Supabaseに保存
+        if (typeof supabaseSync !== 'undefined' && supabaseSync.syncEnabled) {
+            await supabaseSync.saveCampaignMemo(memo);
+        }
     }
 
     renderStaffHeader() {
@@ -347,9 +358,16 @@ class ScheduleManager {
     }
 
 
-    deleteEvent(eventId) {
+    async deleteEvent(eventId) {
+        const eventToDelete = this.events.find(e => e.id === eventId);
         this.events = this.events.filter(e => e.id !== eventId);
         this.saveEvents();
+
+        // Supabaseから削除
+        if (typeof supabaseSync !== 'undefined' && supabaseSync.syncEnabled && eventToDelete) {
+            await supabaseSync.deleteEvent(eventToDelete.id);
+        }
+
         this.renderCalendar();
         this.showNotification('予定が削除されました');
     }
@@ -382,7 +400,7 @@ class ScheduleManager {
         document.getElementById('campaignEditModal').style.display = 'block';
     }
 
-    saveCampaignEdit() {
+    async saveCampaignEdit() {
         const event = this.events.find(e => e.id === this.editingCampaignId);
         if (!event) return;
 
@@ -404,6 +422,12 @@ class ScheduleManager {
         event.description = description;
 
         this.saveEvents();
+
+        // Supabaseに保存
+        if (typeof supabaseSync !== 'undefined' && supabaseSync.syncEnabled) {
+            await supabaseSync.saveEvent(event);
+        }
+
         this.renderCalendar();
         this.showNotification('特拡が更新されました');
     }
@@ -433,7 +457,7 @@ class ScheduleManager {
     }
 
     // 日程編集を保存
-    saveScheduleEdit() {
+    async saveScheduleEdit() {
         const event = this.events.find(e => e.id === this.editingScheduleId);
         if (!event) return;
 
@@ -453,16 +477,29 @@ class ScheduleManager {
         event.color = color;
 
         this.saveEvents();
+
+        // Supabaseに保存
+        if (typeof supabaseSync !== 'undefined' && supabaseSync.syncEnabled) {
+            await supabaseSync.saveEvent(event);
+        }
+
         this.renderCalendar();
         this.showNotification('日程が更新されました');
     }
 
     // 日程を削除
-    deleteSchedule() {
+    async deleteSchedule() {
         if (confirm('この日程を削除してもよろしいですか？')) {
             this.saveUndoState();
+            const eventToDelete = this.events.find(e => e.id === this.editingScheduleId);
             this.events = this.events.filter(e => e.id !== this.editingScheduleId);
             this.saveEvents();
+
+            // Supabaseから削除
+            if (typeof supabaseSync !== 'undefined' && supabaseSync.syncEnabled && eventToDelete) {
+                await supabaseSync.deleteEvent(eventToDelete.id);
+            }
+
             this.renderCalendar();
             this.showNotification('日程が削除されました');
         }
@@ -677,9 +714,10 @@ class ScheduleManager {
         input.focus();
     }
 
-    addQuickEvent(date, person, title) {
+    async addQuickEvent(date, person, title) {
+        const tempId = 'temp_' + Date.now();
         const event = {
-            id: Date.now(),
+            id: tempId,
             title: title,
             date: date,
             time: '',
@@ -688,6 +726,14 @@ class ScheduleManager {
             color: 'transparent',
             note: ''
         };
+
+        // Supabaseに保存
+        if (typeof supabaseSync !== 'undefined' && supabaseSync.syncEnabled) {
+            const savedEvent = await supabaseSync.saveEvent(event);
+            if (savedEvent && savedEvent.id) {
+                event.id = savedEvent.id;
+            }
+        }
 
         this.events.push(event);
         this.saveEvents();
@@ -789,7 +835,7 @@ class ScheduleManager {
         return colors[campaignName] || '#C8E6C9';  // その他は黄緑
     }
 
-    addCampaign() {
+    async addCampaign() {
         const campaignType = document.getElementById('campaignType').value;
         const customCampaign = document.getElementById('campaignCustom').value;
         const campaignDate = document.getElementById('campaignDate').value;
@@ -868,6 +914,20 @@ class ScheduleManager {
         this.events.push(campaignEvent);
 
         this.saveEvents();
+
+        // Supabaseに保存
+        if (typeof supabaseSync !== 'undefined' && supabaseSync.syncEnabled) {
+            const savedEvent = await supabaseSync.saveEvent(campaignEvent);
+            if (savedEvent && savedEvent.id) {
+                // Supabaseから生成されたIDに更新
+                const index = this.events.findIndex(e => e.id === campaignEvent.id);
+                if (index !== -1) {
+                    this.events[index].id = savedEvent.id;
+                    this.saveEvents();
+                }
+            }
+        }
+
         this.renderCalendar();
 
         // フォームをリセット
