@@ -1163,40 +1163,50 @@ header h1 {
 /* スマートフォン用 (768px以下) */
 @media (max-width: 768px) {
     body {
-        padding: 3px;
-        font-size: 10px;
+        padding: 5px;
+        font-size: 12px;
+        overflow-x: hidden;
+        -webkit-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
     }
 
     .container {
         margin: 0;
-        border-radius: 4px;
-        padding: 3px;
-        height: 100vh;
+        border-radius: 8px;
+        padding: 0;
+        min-height: 100vh;
         display: flex;
         flex-direction: column;
+        width: 100%;
+        box-shadow: none;
     }
 
     header {
-        padding: 5px;
+        padding: 10px 8px;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         flex-shrink: 0;
+        position: sticky;
+        top: 0;
+        z-index: 100;
     }
 
     header h1 {
-        font-size: 14px;
+        font-size: 16px;
         margin: 0;
+        font-weight: bold;
     }
 
     .header-controls {
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
         justify-content: center;
-        gap: 3px;
-        margin-top: 3px;
+        gap: 5px;
+        margin-top: 8px;
     }
 
     .header-controls h2 {
-        font-size: 12px;
-        min-width: 30px;
+        font-size: 14px;
+        min-width: 40px;
+        font-weight: bold;
     }
 
     #currentMonth {
@@ -1209,21 +1219,28 @@ header h1 {
     }
 
     .year-select {
-        padding: 2px 4px;
-        font-size: 10px;
+        padding: 6px 8px;
+        font-size: 14px;
+        min-height: 34px;
+        border-radius: 6px;
     }
 
     .nav-btn, .print-btn, .undo-btn {
-        padding: 3px 6px;
-        font-size: 10px;
+        padding: 8px 12px;
+        font-size: 12px;
+        min-height: 34px;
+        touch-action: manipulation;
+        border-radius: 6px;
     }
 
     .main-content {
-        padding: 3px;
+        padding: 8px;
         flex: 1;
         overflow-y: auto;
+        overflow-x: hidden;
         display: flex;
         flex-direction: column;
+        -webkit-overflow-scrolling: touch;
     }
 
     .calendar-container {
@@ -1291,15 +1308,25 @@ header h1 {
     }
 
     .staff-inputs {
-        grid-template-columns: 35px repeat(9, 1fr);
-        gap: 0;
-        padding: 0;
-        font-size: 6px;
+        display: grid;
+        grid-template-columns: 40px repeat(9, 1fr);
+        gap: 2px;
+        padding: 4px;
+        font-size: 10px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
     .date-header-cell {
-        min-width: 35px;
-        width: 35px;
+        min-width: 40px;
+        width: 40px;
+        font-size: 11px;
+        font-weight: bold;
+        background: #f8f9fa;
+        padding: 4px;
+        position: sticky;
+        left: 0;
+        z-index: 5;
     }
 
     .staff-input-cell {
@@ -1308,16 +1335,21 @@ header h1 {
     }
 
     .staff-input {
-        min-width: auto;
-        font-size: 7px;
-        padding: 1px;
-        height: 12px;
+        min-width: 100%;
+        font-size: 11px;
+        padding: 4px 2px;
+        height: 28px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        -webkit-appearance: none;
     }
 
     /* カレンダーのモバイル対応 - 超コンパクト化 */
     .vertical-calendar {
         flex: 1;
-        overflow-y: hidden;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
     }
 
     .vertical-calendar-grid {
@@ -1328,21 +1360,25 @@ header h1 {
     }
 
     .date-row {
-        min-height: 0;
-        flex: 1;
+        min-height: 32px;
         display: grid;
-        grid-template-columns: 35px 1fr;
-        max-height: calc((100vh - 100px) / 31); /* 31日で均等割り */
-        border-bottom: 0.5px solid #eee;
+        grid-template-columns: 40px 1fr;
+        border-bottom: 1px solid #e0e0e0;
+        align-items: stretch;
     }
 
     .date-cell {
-        width: 35px;
-        padding: 0 2px;
-        font-size: 6px;
+        width: 40px;
+        padding: 4px;
+        font-size: 10px;
         display: flex;
         align-items: center;
+        justify-content: center;
         background: #f8f9fa;
+        border-right: 1px solid #e0e0e0;
+        position: sticky;
+        left: 0;
+        z-index: 5;
     }
 
     .campaign-button-container {
@@ -1350,37 +1386,52 @@ header h1 {
     }
 
     .date-number {
-        font-size: 7px;
+        font-size: 11px;
         font-weight: bold;
+        margin-right: 2px;
     }
 
     .day-name {
-        font-size: 6px;
-        display: none; /* 曜日は非表示でスペース節約 */
+        font-size: 9px;
+        display: inline;
+        color: #666;
     }
 
     .events-grid {
+        display: grid;
         grid-template-columns: repeat(9, 1fr);
         gap: 0;
         padding: 0;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
     .event-cell {
         min-width: 0;
-        min-height: 0;
-        padding: 0;
-        border-right: 0.5px solid #eee;
+        min-height: 32px;
+        padding: 2px;
+        border-right: 1px solid #e0e0e0;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 6px;
+        font-size: 10px;
         overflow: hidden;
+        touch-action: manipulation;
+        cursor: pointer;
+        position: relative;
     }
 
     .event-item-plain {
-        font-size: 5px !important;
-        padding: 0 !important;
-        line-height: 1;
+        font-size: 9px !important;
+        padding: 2px !important;
+        line-height: 1.2;
+        word-break: break-all;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        width: 100%;
+        height: 100%;
     }
 
     .event-content {
@@ -1390,11 +1441,13 @@ header h1 {
     }
 
     .event-title-small {
-        font-size: 5px !important;
+        font-size: 9px !important;
         display: block;
         overflow: hidden;
         text-overflow: ellipsis;
-        white-space: nowrap;
+        white-space: normal;
+        word-break: break-all;
+        line-height: 1.2;
     }
 
     .event-note-small {
@@ -1406,16 +1459,18 @@ header h1 {
     }
 
     .campaign-event-full {
-        font-size: 5px;
-        padding: 0 1px;
+        font-size: 10px;
+        padding: 2px;
         height: 100%;
         display: flex;
         align-items: center;
         justify-content: center;
+        text-align: center;
     }
 
     .campaign-title {
-        font-size: 5px;
+        font-size: 10px;
+        font-weight: bold;
     }
 
     .campaign-note {
@@ -1431,9 +1486,13 @@ header h1 {
 
     /* モーダルのモバイル対応 */
     .modal-content {
-        width: 95%;
-        margin: 10% auto;
-        padding: 20px;
+        width: 90%;
+        max-width: 400px;
+        margin: 5% auto;
+        padding: 15px;
+        border-radius: 12px;
+        max-height: 90vh;
+        overflow-y: auto;
     }
 
     #modalTitle {
@@ -1447,44 +1506,105 @@ header h1 {
 
 /* 小型スマートフォン用 (480px以下) */
 @media (max-width: 480px) {
+    body {
+        padding: 3px;
+    }
+
+    header {
+        padding: 8px 5px;
+    }
+
     header h1 {
-        font-size: 12px;
+        font-size: 14px;
+    }
+
+    .header-controls {
+        gap: 3px;
+        margin-top: 5px;
     }
 
     .header-controls h2 {
-        font-size: 10px;
-        min-width: 25px;
+        font-size: 12px;
+        min-width: 35px;
     }
 
     #currentMonth {
-        font-size: 10px;
+        font-size: 12px;
     }
 
     .year-select {
-        padding: 1px 3px;
-        font-size: 9px;
+        padding: 5px 6px;
+        font-size: 12px;
+        min-height: 30px;
     }
 
     .nav-btn, .print-btn, .undo-btn {
-        padding: 2px 4px;
-        font-size: 8px;
+        padding: 6px 8px;
+        font-size: 11px;
+        min-height: 30px;
+    }
+
+    .main-content {
+        padding: 5px;
     }
 
     .staff-inputs {
-        grid-template-columns: 30px repeat(9, 1fr);
+        grid-template-columns: 35px repeat(9, 1fr);
+        gap: 1px;
+        padding: 2px;
     }
 
     .date-header-cell {
-        width: 30px;
+        width: 35px;
+        font-size: 10px;
+        padding: 2px;
+    }
+
+    .staff-input {
+        font-size: 10px;
+        padding: 3px 2px;
+        height: 24px;
     }
 
     .date-cell {
-        width: 30px;
-        font-size: 5px;
+        width: 35px;
+        font-size: 9px;
+        padding: 2px;
     }
 
     .date-row {
-        grid-template-columns: 30px 1fr;
+        grid-template-columns: 35px 1fr;
+        min-height: 28px;
+    }
+
+    .date-number {
+        font-size: 10px;
+    }
+
+    .day-name {
+        font-size: 8px;
+    }
+
+    .event-cell {
+        min-height: 28px;
+        font-size: 9px;
+        padding: 1px;
+    }
+
+    .event-item-plain {
+        font-size: 8px !important;
+    }
+
+    .event-title-small {
+        font-size: 8px !important;
+    }
+
+    .campaign-event-full {
+        font-size: 9px;
+    }
+
+    .campaign-title {
+        font-size: 9px;
     }
 
     .staff-input {
