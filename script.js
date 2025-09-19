@@ -107,7 +107,7 @@ class ScheduleManager {
 
     renderStaffHeader() {
         const staffInputsDiv = document.getElementById('staffInputs');
-        let html = '<div class="date-header-cell"></div>'; // 空のセル（日付欄の上）
+        let html = '<div class="date-header-cell">日付</div>'; // 日付ヘッダー
 
         // CSS変数で担当者数を設定
         document.documentElement.style.setProperty('--staff-count', this.staffMembers.length);

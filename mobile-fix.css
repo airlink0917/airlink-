@@ -1,0 +1,283 @@
+/* モバイル表示修正用CSS */
+
+/* モバイル全般の修正 (768px以下) */
+@media (max-width: 768px) {
+    /* 基本設定 */
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        padding: 0;
+        margin: 0;
+        font-size: 12px;
+        overflow: visible;
+        width: 100%;
+    }
+
+    .container {
+        margin: 0;
+        padding: 0;
+        border-radius: 0;
+        min-height: 100vh;
+        width: 100%;
+        overflow: visible;
+    }
+
+    /* ヘッダー */
+    header {
+        padding: 8px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    header h1 {
+        font-size: 14px;
+        margin: 0;
+    }
+
+    .header-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 5px;
+        justify-content: center;
+    }
+
+    .nav-btn, .print-btn, .undo-btn {
+        padding: 6px 10px;
+        font-size: 11px;
+        min-height: 28px;
+    }
+
+    /* メインコンテンツ */
+    .main-content {
+        padding: 0;
+        margin-top: 80px; /* ヘッダーの高さ分 */
+        width: 100%;
+        overflow: visible;
+    }
+
+    .calendar-container {
+        padding: 0;
+        width: 100%;
+        overflow: visible;
+        border-radius: 0;
+    }
+
+    /* カレンダー全体 */
+    .vertical-calendar {
+        width: 100%;
+        overflow-x: auto;
+        overflow-y: visible;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .vertical-calendar-grid {
+        display: flex;
+        flex-direction: column;
+        width: max-content;
+        min-width: 100%;
+    }
+
+    /* スタッフヘッダー */
+    .staff-header {
+        position: sticky;
+        top: 80px; /* ヘッダーの下に配置 */
+        z-index: 900;
+        background: white;
+        border-bottom: 2px solid #667eea;
+        width: 100%;
+    }
+
+    .staff-inputs {
+        display: flex;
+        width: max-content;
+        min-width: 100%;
+        padding: 4px;
+        gap: 2px;
+    }
+
+    .date-header-cell {
+        width: 45px;
+        min-width: 45px;
+        position: sticky;
+        left: 0;
+        z-index: 901;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        font-size: 10px;
+        padding: 4px;
+        text-align: center;
+    }
+
+    .staff-input-cell {
+        width: 60px;
+        min-width: 60px;
+        padding: 2px;
+    }
+
+    .staff-input {
+        width: 100%;
+        font-size: 10px;
+        padding: 3px;
+        height: 24px;
+    }
+
+    /* 日付行 */
+    .date-row {
+        display: flex;
+        width: max-content;
+        min-width: 100%;
+        min-height: 32px;
+        border-bottom: 1px solid #ddd;
+        position: relative;
+    }
+
+    /* 日付セル（固定） */
+    .date-cell {
+        width: 45px;
+        min-width: 45px;
+        padding: 4px 2px;
+        font-size: 10px;
+        position: sticky;
+        left: 0;
+        z-index: 800;
+        background: #f8f9fa;
+        border-right: 1px solid #ddd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+    }
+
+    .date-row.sunday .date-cell {
+        background: #ffe5e5;
+        color: #dc3545;
+    }
+
+    .date-row.saturday .date-cell {
+        background: #e5f2ff;
+        color: #007bff;
+    }
+
+    .date-row.today .date-cell {
+        background: #fff3cd;
+        font-weight: bold;
+    }
+
+    .date-number {
+        font-size: 10px;
+        font-weight: bold;
+    }
+
+    .day-name {
+        font-size: 8px;
+    }
+
+    /* イベントグリッド */
+    .events-grid {
+        display: flex;
+        width: max-content;
+        min-width: calc(100% - 45px);
+    }
+
+    .event-cell {
+        width: 60px;
+        min-width: 60px;
+        min-height: 32px;
+        padding: 2px;
+        border-right: 1px solid #eee;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 9px;
+        overflow: hidden;
+    }
+
+    .event-item-plain {
+        font-size: 8px !important;
+        padding: 1px !important;
+        text-align: center;
+        width: 100%;
+        word-break: break-all;
+    }
+
+    .event-title-small {
+        font-size: 8px !important;
+        line-height: 1.2;
+    }
+
+    .event-note-small,
+    .event-time-small {
+        display: none;
+    }
+
+    /* 特拡ボタン */
+    .campaign-button-container {
+        padding: 8px;
+        background: #f8f9fa;
+        position: sticky;
+        top: 80px;
+        z-index: 850;
+    }
+
+    .campaign-button-container .btn-primary {
+        width: 100%;
+        padding: 8px;
+        font-size: 12px;
+    }
+
+    /* スクロールバー調整 */
+    ::-webkit-scrollbar {
+        height: 6px;
+        width: 6px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #999;
+        border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #f0f0f0;
+    }
+}
+
+/* さらに小さいデバイス用 (480px以下) */
+@media (max-width: 480px) {
+    .date-header-cell,
+    .date-cell {
+        width: 40px;
+        min-width: 40px;
+    }
+
+    .staff-input-cell,
+    .event-cell {
+        width: 50px;
+        min-width: 50px;
+    }
+
+    .staff-input {
+        font-size: 9px;
+        padding: 2px;
+        height: 20px;
+    }
+
+    .date-number {
+        font-size: 9px;
+    }
+
+    .day-name {
+        font-size: 7px;
+    }
+
+    .event-item-plain,
+    .event-title-small {
+        font-size: 7px !important;
+    }
+}
