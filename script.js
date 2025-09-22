@@ -35,7 +35,8 @@ class ScheduleManager {
 
     saveEvents() {
         localStorage.setItem('scheduleEvents', JSON.stringify(this.events));
-        // Supabaseには個別に保存（addEventやdeleteEventで処理）
+        // Supabaseへの保存は個別のメソッド（addEvent、deleteEventなど）で処理
+        // ここではLocalStorageのみ更新して、無限ループを防ぐ
     }
 
     saveUndoState() {
@@ -97,9 +98,12 @@ class ScheduleManager {
     async saveStaffMembers() {
         localStorage.setItem('staffMembers', JSON.stringify(this.staffMembers));
 
-        // Supabaseに保存
+        // Supabaseに保存（リアルタイム同期を有効化）
         if (typeof supabaseSync !== 'undefined' && supabaseSync.syncEnabled) {
-            await supabaseSync.saveStaffMembers(this.staffMembers);
+            const saved = await supabaseSync.saveStaffMembers(this.staffMembers);
+            if (saved) {
+                console.log('スタッフメンバーをSupabaseに同期しました');
+            }
         }
     }
 
@@ -727,16 +731,22 @@ class ScheduleManager {
             note: ''
         };
 
-        // Supabaseに保存
+        // 先にローカルに追加
+        this.events.push(event);
+        this.saveEvents();
+
+        // Supabaseに保存（非同期で実行）
         if (typeof supabaseSync !== 'undefined' && supabaseSync.syncEnabled) {
             const savedEvent = await supabaseSync.saveEvent(event);
             if (savedEvent && savedEvent.id) {
-                event.id = savedEvent.id;
+                // Supabaseから返されたIDで更新
+                const index = this.events.findIndex(e => e.id === tempId);
+                if (index !== -1) {
+                    this.events[index].id = savedEvent.id;
+                    this.saveEvents();
+                }
             }
         }
-
-        this.events.push(event);
-        this.saveEvents();
         this.renderCalendar();
         this.showNotification('予定が追加されました');
     }
@@ -911,16 +921,17 @@ class ScheduleManager {
             note: campaignNote,
             isCampaign: true
         };
+        // 先にローカルに追加
         this.events.push(campaignEvent);
-
         this.saveEvents();
 
-        // Supabaseに保存
+        // Supabaseに保存（非同期で実行）
         if (typeof supabaseSync !== 'undefined' && supabaseSync.syncEnabled) {
             const savedEvent = await supabaseSync.saveEvent(campaignEvent);
             if (savedEvent && savedEvent.id) {
                 // Supabaseから生成されたIDに更新
-                const index = this.events.findIndex(e => e.id === campaignEvent.id);
+                const tempId = campaignEvent.id;
+                const index = this.events.findIndex(e => e.id === tempId);
                 if (index !== -1) {
                     this.events[index].id = savedEvent.id;
                     this.saveEvents();

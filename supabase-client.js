@@ -18,6 +18,7 @@ class SupabaseSync {
             // Supabase URLとキーが設定されているか確認
             if (this.SUPABASE_URL === 'YOUR_SUPABASE_URL' || this.SUPABASE_ANON_KEY === 'YOUR_SUPABASE_ANON_KEY') {
                 console.log('Supabase: ローカルストレージモードで動作します（データベース未設定）');
+                this.updateSyncStatus('ローカルのみ', 'gray');
                 return false;
             }
 
@@ -37,6 +38,7 @@ class SupabaseSync {
 
             console.log('Supabase: 接続しました');
             this.syncEnabled = true;
+            this.updateSyncStatus('オンライン 🔴', 'green');
 
             // 初期データを読み込み
             await this.loadInitialData();
@@ -47,6 +49,7 @@ class SupabaseSync {
             return true;
         } catch (error) {
             console.error('Supabase初期化エラー:', error);
+            this.updateSyncStatus('オフライン', 'gray');
             return false;
         }
     }
@@ -119,66 +122,111 @@ class SupabaseSync {
 
     // リアルタイム同期の設定
     setupRealtimeSync() {
-        // イベントテーブルの変更を監視
-        const eventsChannel = this.supabase
-            .channel('events-changes')
-            .on('postgres_changes',
-                { event: '*', schema: 'public', table: 'events' },
+        // すべてのテーブルの変更を監視する単一チャンネル
+        const channel = this.supabase
+            .channel('db-changes')
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'events' },
                 async (payload) => {
-                    console.log('イベント変更:', payload);
-                    await this.handleEventChange(payload);
+                    console.log('イベント追加:', payload);
+                    await this.handleEventChange({ ...payload, eventType: 'INSERT' });
                 }
             )
-            .subscribe();
-
-        // スタッフメンバーテーブルの変更を監視
-        const staffChannel = this.supabase
-            .channel('staff-changes')
-            .on('postgres_changes',
+            .on(
+                'postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'events' },
+                async (payload) => {
+                    console.log('イベント更新:', payload);
+                    await this.handleEventChange({ ...payload, eventType: 'UPDATE' });
+                }
+            )
+            .on(
+                'postgres_changes',
+                { event: 'DELETE', schema: 'public', table: 'events' },
+                async (payload) => {
+                    console.log('イベント削除:', payload);
+                    await this.handleEventChange({ ...payload, eventType: 'DELETE' });
+                }
+            )
+            .on(
+                'postgres_changes',
                 { event: '*', schema: 'public', table: 'staff_members' },
                 async (payload) => {
                     console.log('スタッフ変更:', payload);
                     await this.handleStaffChange(payload);
                 }
             )
-            .subscribe();
-
-        // 特拡メモテーブルの変更を監視
-        const memoChannel = this.supabase
-            .channel('memo-changes')
-            .on('postgres_changes',
+            .on(
+                'postgres_changes',
                 { event: '*', schema: 'public', table: 'campaign_memos' },
                 async (payload) => {
                     console.log('メモ変更:', payload);
                     await this.handleMemoChange(payload);
                 }
             )
-            .subscribe();
+            .subscribe((status) => {
+                if (status === 'SUBSCRIBED') {
+                    console.log('Supabase: リアルタイム同期を開始しました');
+                    this.updateSyncStatus('同期中 🔄', 'green');
+                } else if (status === 'CHANNEL_ERROR') {
+                    console.error('Supabase: チャンネルエラーが発生しました');
+                    this.updateSyncStatus('エラー ⚠️', 'red');
+                    // 再接続を試みる
+                    setTimeout(() => {
+                        this.cleanup();
+                        this.setupRealtimeSync();
+                    }, 5000);
+                } else if (status === 'TIMED_OUT') {
+                    console.error('Supabase: 接続がタイムアウトしました');
+                    this.updateSyncStatus('タイムアウト', 'orange');
+                }
+            });
 
-        this.subscriptions.push(eventsChannel, staffChannel, memoChannel);
+        this.subscriptions.push(channel);
     }
 
     // イベント変更の処理
     async handleEventChange(payload) {
+        // 自分自身の変更の場合はスキップ（無限ループ防止）
+        const timestamp = Date.now();
+        if (this.lastSync && timestamp - this.lastSync < 1000) {
+            console.log('自分自身の変更をスキップ');
+            return;
+        }
+
         if (payload.eventType === 'INSERT') {
-            const newEvent = {
-                ...payload.new,
-                campaignMembers: payload.new.campaign_members || []
-            };
-            scheduleManager.events.push(newEvent);
+            // 既に同じIDのイベントが存在する場合はスキップ
+            const exists = scheduleManager.events.find(e => e.id === payload.new.id);
+            if (!exists) {
+                const newEvent = {
+                    ...payload.new,
+                    isCampaign: payload.new.is_campaign,
+                    campaignMembers: payload.new.campaign_members || []
+                };
+                scheduleManager.events.push(newEvent);
+                console.log('新しいイベントを追加:', newEvent);
+            }
         } else if (payload.eventType === 'UPDATE') {
             const index = scheduleManager.events.findIndex(e => e.id === payload.new.id);
             if (index !== -1) {
                 scheduleManager.events[index] = {
                     ...payload.new,
+                    isCampaign: payload.new.is_campaign,
                     campaignMembers: payload.new.campaign_members || []
                 };
+                console.log('イベントを更新:', scheduleManager.events[index]);
             }
         } else if (payload.eventType === 'DELETE') {
+            const beforeLength = scheduleManager.events.length;
             scheduleManager.events = scheduleManager.events.filter(e => e.id !== payload.old.id);
+            if (scheduleManager.events.length < beforeLength) {
+                console.log('イベントを削除:', payload.old.id);
+            }
         }
 
-        scheduleManager.saveEvents();
+        // LocalStorageに保存（Supabaseには送信しない）
+        localStorage.setItem('scheduleEvents', JSON.stringify(scheduleManager.events));
         scheduleManager.renderCalendar();
     }
 
@@ -201,9 +249,12 @@ class SupabaseSync {
 
     // イベントの保存
     async saveEvent(event) {
-        if (!this.syncEnabled) return;
+        if (!this.syncEnabled) return null;
 
         try {
+            // 同期タイムスタンプを更新
+            this.lastSync = Date.now();
+
             const eventData = {
                 title: event.title,
                 date: event.date,
@@ -216,7 +267,7 @@ class SupabaseSync {
                 campaign_members: event.campaignMembers || []
             };
 
-            // IDが数値型、または"temp_"で始まらない文字列の場合は更新
+            // IDが数値型の場合は更新
             if (event.id && typeof event.id === 'number') {
                 // 既存イベントの更新
                 console.log('Supabase: イベントを更新します', event.id, eventData);
@@ -227,11 +278,14 @@ class SupabaseSync {
                     .select()
                     .single();
 
-                if (error) throw error;
+                if (error) {
+                    console.error('更新エラー:', error);
+                    throw error;
+                }
                 console.log('Supabase: イベント更新完了', data);
                 return data;
             } else {
-                // 新規イベントの作成（temp_で始まるIDまたはIDなしの場合）
+                // 新規イベントの作成
                 console.log('Supabase: 新規イベントを作成します', eventData);
                 const { data, error } = await this.supabase
                     .from('events')
@@ -239,12 +293,16 @@ class SupabaseSync {
                     .select()
                     .single();
 
-                if (error) throw error;
+                if (error) {
+                    console.error('作成エラー:', error);
+                    throw error;
+                }
                 console.log('Supabase: イベント作成完了', data);
                 return data;
             }
         } catch (error) {
-            console.error('イベント保存エラー:', error);
+            console.error('イベント保存エラー:', error.message || error);
+            alert('データ同期エラーが発生しました。ページを再読み込みしてください。');
             return null;
         }
     }
@@ -269,34 +327,45 @@ class SupabaseSync {
 
     // スタッフメンバーの保存
     async saveStaffMembers(staffMembers) {
-        if (!this.syncEnabled) return;
+        if (!this.syncEnabled) return false;
 
         try {
+            // 同期タイムスタンプを更新
+            this.lastSync = Date.now();
+
             // 既存のスタッフメンバーを削除
-            await this.supabase
+            const { error: deleteError } = await this.supabase
                 .from('staff_members')
                 .delete()
                 .gte('position', 0);
 
-            // 新しいスタッフメンバーを挿入
+            if (deleteError) {
+                console.error('削除エラー:', deleteError);
+                throw deleteError;
+            }
+
+            // 新しいスタッフメンバーを挿入（空文字も含めて全ポジションを保存）
             const staffData = staffMembers
                 .map((name, position) => ({
                     position,
-                    name: name || null
-                }))
-                .filter(staff => staff.name !== null);
+                    name: name || ''
+                }));
 
             if (staffData.length > 0) {
                 const { error } = await this.supabase
                     .from('staff_members')
                     .insert(staffData);
 
-                if (error) throw error;
+                if (error) {
+                    console.error('挿入エラー:', error);
+                    throw error;
+                }
             }
 
+            console.log('Supabase: スタッフメンバー保存完了');
             return true;
         } catch (error) {
-            console.error('スタッフ保存エラー:', error);
+            console.error('スタッフ保存エラー:', error.message || error);
             return false;
         }
     }
@@ -337,12 +406,22 @@ class SupabaseSync {
         }
     }
 
+    // 同期ステータスの更新
+    updateSyncStatus(message, color = 'gray') {
+        const statusElement = document.getElementById('syncStatus');
+        if (statusElement) {
+            statusElement.textContent = message;
+            statusElement.style.color = color;
+        }
+    }
+
     // クリーンアップ
     cleanup() {
         this.subscriptions.forEach(subscription => {
             subscription.unsubscribe();
         });
         this.subscriptions = [];
+        this.updateSyncStatus('オフライン', 'gray');
     }
 }
 
