@@ -4,6 +4,12 @@
     box-sizing: border-box;
 }
 
+html {
+    /* 横スクロールを防ぐ */
+    overflow-x: hidden;
+    width: 100%;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', 'Meiryo', sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -11,6 +17,10 @@ body {
     padding: 20px;
     -webkit-overflow-scrolling: touch;
     -webkit-font-smoothing: antialiased;
+    /* 横スクロール防止 */
+    overflow-x: hidden;
+    width: 100%;
+    position: relative;
 }
 
 .container {
@@ -20,6 +30,9 @@ body {
     border-radius: 12px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
     overflow: hidden;
+    /* 横スクロール防止 */
+    position: relative;
+    width: 100%;
 }
 
 header {
@@ -506,9 +519,12 @@ header h1 {
 .vertical-calendar-grid {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 0; /* iOSでのズレ防止 */
     border-radius: 0 0 8px 8px;
     min-width: fit-content;
+    /* iOSでのレンダリング最適化 */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
 }
 
 .date-row {
@@ -521,6 +537,9 @@ header h1 {
     transition: background-color 0.3s;
     position: relative;
     width: 100%;
+    /* ズレ防止 */
+    flex-wrap: nowrap;
+    gap: 0;
 }
 
 .date-row:hover {
@@ -589,9 +608,9 @@ header h1 {
 .staff-inputs {
     display: grid;
     grid-template-columns: 120px repeat(var(--staff-count, 9), minmax(110px, 1fr));
-    gap: 2px;
+    gap: 0; /* iOSでのズレ防止 */
     padding: 10px 5px;
-    align-items: center;
+    align-items: stretch; /* 高さを揃える */
     min-width: calc(120px + var(--staff-count, 9) * 110px);
     background-color: #f8f9fa;
     border-bottom: 2px solid #667eea;
@@ -673,9 +692,11 @@ header h1 {
     flex: 1;
     display: grid;
     grid-template-columns: repeat(var(--staff-count, 9), minmax(110px, 1fr));
-    gap: 2px;
+    gap: 0; /* iOSでのズレ防止 */
     padding: 5px 5px 5px 0;
     min-width: calc(var(--staff-count, 9) * 110px);
+    /* グリッドレイアウトを固定 */
+    align-items: stretch;
 }
 
 .campaign-row {
