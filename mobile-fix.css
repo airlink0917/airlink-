@@ -135,18 +135,18 @@
 
     .staff-inputs {
         display: flex;
-        width: max-content;
-        min-width: 100%;
-        padding: 4px;
+        width: 100%;
+        padding: 4px 0;
         gap: 0; /* 隙間をなくしてズレを防ぐ */
         align-items: stretch;
+        box-sizing: border-box;
     }
 
     .date-header-cell {
-        width: 45px;
-        min-width: 45px;
-        max-width: 45px;
-        flex-shrink: 0;
+        width: 50px;
+        min-width: 50px;
+        max-width: 50px;
+        flex: 0 0 50px;
         position: sticky;
         left: 0;
         z-index: 901;
@@ -156,15 +156,17 @@
         padding: 4px;
         text-align: center;
         border-right: 1px solid #5a67d8;
+        box-sizing: border-box;
     }
 
     .staff-input-cell {
-        width: 60px;
-        min-width: 60px;
-        max-width: 60px;
-        flex-shrink: 0;
+        width: 65px;
+        min-width: 65px;
+        max-width: 65px;
+        flex: 0 0 65px;
         padding: 2px;
         border-right: 1px solid #e2e8f0;
+        box-sizing: border-box;
     }
 
     .staff-input {
@@ -177,22 +179,22 @@
     /* 日付行 */
     .date-row {
         display: flex;
-        width: max-content;
-        min-width: 100%;
+        width: 100%;
         min-height: 32px;
         border-bottom: 1px solid #ddd;
         position: relative;
         align-items: stretch;
         /* 行の高さを揃える */
         flex-wrap: nowrap;
+        box-sizing: border-box;
     }
 
     /* 日付セル（固定） */
     .date-cell {
-        width: 45px;
-        min-width: 45px;
-        max-width: 45px;
-        flex-shrink: 0;
+        width: 50px;
+        min-width: 50px;
+        max-width: 50px;
+        flex: 0 0 50px;
         padding: 4px 2px;
         font-size: 10px;
         position: sticky;
@@ -204,6 +206,7 @@
         align-items: center;
         justify-content: center;
         flex-direction: column;
+        box-sizing: border-box;
         /* iOSでのスティッキー問題対策 */
         transform: translateZ(0);
         -webkit-transform: translateZ(0);
@@ -236,17 +239,17 @@
     /* イベントグリッド */
     .events-grid {
         display: flex;
-        width: max-content;
-        min-width: calc(100% - 45px);
+        width: 100%;
+        flex: 1;
         gap: 0; /* 隙間をなくしてズレを防ぐ */
         align-items: stretch;
     }
 
     .event-cell {
-        width: 60px;
-        min-width: 60px;
-        max-width: 60px;
-        flex-shrink: 0;
+        width: 65px;
+        min-width: 65px;
+        max-width: 65px;
+        flex: 0 0 65px;
         min-height: 32px;
         padding: 2px;
         border-right: 1px solid #eee;
@@ -256,6 +259,7 @@
         font-size: 9px;
         overflow: hidden;
         word-break: break-all;
+        box-sizing: border-box;
     }
 
     .event-item-plain {
@@ -311,14 +315,18 @@
 @media (max-width: 480px) {
     .date-header-cell,
     .date-cell {
-        width: 40px;
-        min-width: 40px;
+        width: 45px;
+        min-width: 45px;
+        max-width: 45px;
+        flex: 0 0 45px;
     }
 
     .staff-input-cell,
     .event-cell {
-        width: 50px;
-        min-width: 50px;
+        width: 55px;
+        min-width: 55px;
+        max-width: 55px;
+        flex: 0 0 55px;
     }
 
     .staff-input {

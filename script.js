@@ -26,6 +26,9 @@ class ScheduleManager {
 
         // アンドゥボタンの初期状態を設定
         this.updateUndoButton();
+
+        // iOSでのレイアウト修正
+        this.fixiOSLayout();
     }
 
     loadEvents() {
@@ -126,6 +129,11 @@ class ScheduleManager {
 
         // CSS変数で担当者数を設定
         document.documentElement.style.setProperty('--staff-count', this.staffMembers.length);
+
+        // iOS用のレイアウト修正を適用
+        setTimeout(() => {
+            this.fixiOSLayout();
+        }, 0);
 
         // 担当者入力欄を動的に生成
         for (let i = 0; i < this.staffMembers.length; i++) {
@@ -237,6 +245,18 @@ class ScheduleManager {
         document.getElementById('yearSelect').addEventListener('change', (e) => {
             this.currentDate.setFullYear(parseInt(e.target.value));
             this.renderCalendar();
+        });
+
+        // ウィンドウリサイズ時のレイアウト修正
+        window.addEventListener('resize', () => {
+            this.fixiOSLayout();
+        });
+
+        // 画面方向変更時のレイアウト修正
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                this.fixiOSLayout();
+            }, 100);
         });
 
         // 特拡タイプ選択時の処理
@@ -1037,6 +1057,58 @@ class ScheduleManager {
                 document.body.removeChild(notification);
             }, 300);
         }, 3000);
+    }
+
+    // iOSでのレイアウト修正
+    fixiOSLayout() {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        if (!isIOS) return;
+
+        // モバイルデバイスの場合のみ処理
+        if (window.innerWidth > 768) return;
+
+        // スタッフ数を取得
+        const staffCount = this.staffMembers.length;
+        const viewportWidth = window.innerWidth;
+        const dateColumnWidth = 50; // 日付列の幅
+        const availableWidth = viewportWidth - dateColumnWidth;
+        const cellWidth = Math.floor(availableWidth / staffCount);
+
+        // CSSカスタムプロパティを設定
+        const style = document.createElement('style');
+        style.id = 'ios-dynamic-styles';
+        style.innerHTML = `
+            @media (max-width: 768px) {
+                .staff-input-cell,
+                .event-cell {
+                    width: ${cellWidth}px !important;
+                    min-width: ${cellWidth}px !important;
+                    max-width: ${cellWidth}px !important;
+                    flex: 0 0 ${cellWidth}px !important;
+                }
+
+                .staff-inputs {
+                    width: ${viewportWidth}px !important;
+                }
+
+                .events-grid {
+                    width: ${availableWidth}px !important;
+                }
+
+                .date-row {
+                    width: ${viewportWidth}px !important;
+                }
+            }
+        `;
+
+        // 既存のスタイルを削除
+        const existingStyle = document.getElementById('ios-dynamic-styles');
+        if (existingStyle) {
+            existingStyle.remove();
+        }
+
+        // 新しいスタイルを追加
+        document.head.appendChild(style);
     }
 
     addStaffMember() {
