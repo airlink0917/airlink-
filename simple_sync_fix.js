@@ -219,14 +219,23 @@ async function saveStaffToSupabase(staffArray) {
 async function deleteEventFromSupabase(eventId) {
     if (!simpleSupabase || !eventId) return false;
 
-    console.log('イベント削除:', eventId);
+    console.log('イベント削除:', eventId, 'タイプ:', typeof eventId);
 
     try {
-        const { error } = await simpleSupabase
+        // IDが数値型の場合はidカラムで削除、文字列の場合はevent_idカラムで削除
+        let deleteQuery = simpleSupabase
             .from('schedule_events')
             .delete()
-            .eq('id', eventId)
             .eq('user_id', SYNC_CONFIG.USER_ID);
+
+        if (typeof eventId === 'number') {
+            deleteQuery = deleteQuery.eq('id', eventId);
+        } else {
+            // 文字列IDの場合はevent_idカラムを使用
+            deleteQuery = deleteQuery.eq('event_id', eventId);
+        }
+
+        const { error } = await deleteQuery;
 
         if (error) throw error;
         console.log('イベント削除成功');

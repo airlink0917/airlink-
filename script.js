@@ -363,9 +363,9 @@ class ScheduleManager {
             scheduleEditModal.style.display = 'none';
         });
 
-        document.getElementById('deleteScheduleBtn').addEventListener('click', () => {
-            this.deleteSchedule();
-            scheduleEditModal.style.display = 'none';
+        document.getElementById('deleteScheduleBtn').addEventListener('click', async () => {
+            await this.deleteSchedule();
+            // モーダルを閉じる処理はdeleteSchedule内で実行
         });
 
         document.getElementById('cancelScheduleBtn').addEventListener('click', () => {
@@ -383,17 +383,23 @@ class ScheduleManager {
 
 
     async deleteEvent(eventId) {
-        const eventToDelete = this.events.find(e => e.id === eventId);
-        this.events = this.events.filter(e => e.id !== eventId);
-        this.saveEvents();
+        // IDを文字列に変換して比較
+        const eventToDelete = this.events.find(e => String(e.id) === String(eventId));
 
-        // Supabaseから削除
-        if (typeof supabaseSync !== 'undefined' && supabaseSync.syncEnabled && eventToDelete) {
-            await supabaseSync.deleteEvent(eventToDelete.id);
+        if (eventToDelete) {
+            this.events = this.events.filter(e => String(e.id) !== String(eventId));
+            this.saveEvents();
+
+            // Supabaseから削除（simpleSyncを使用）
+            if (typeof window.simpleSync !== 'undefined' && window.simpleSync.deleteEvent) {
+                await window.simpleSync.deleteEvent(eventToDelete.id);
+            }
+
+            this.renderCalendar();
+            this.showNotification('予定が削除されました');
+        } else {
+            console.error('削除対象が見つかりません:', eventId);
         }
-
-        this.renderCalendar();
-        this.showNotification('予定が削除されました');
     }
 
     editEvent(eventId) {
@@ -447,9 +453,9 @@ class ScheduleManager {
 
         this.saveEvents();
 
-        // Supabaseに保存
-        if (typeof supabaseSync !== 'undefined' && supabaseSync.syncEnabled) {
-            await supabaseSync.saveEvent(event);
+        // Supabaseに保存（simpleSyncを使用）
+        if (typeof window.simpleSync !== 'undefined' && window.simpleSync.saveEvent) {
+            await window.simpleSync.saveEvent(event);
         }
 
         this.renderCalendar();
@@ -458,10 +464,12 @@ class ScheduleManager {
 
     // 日程編集モーダルを開く
     openScheduleEditModal(eventId) {
-        const event = this.events.find(e => e.id === eventId);
+        // IDを文字列に変換して比較
+        const event = this.events.find(e => String(e.id) === String(eventId));
         if (!event || event.isCampaign) return;
 
-        this.editingScheduleId = eventId;
+        // IDを保存（元の型を維持）
+        this.editingScheduleId = event.id;
 
         // 現在の値をセット
         document.getElementById('editScheduleTitle').value = event.title || '';
@@ -502,9 +510,9 @@ class ScheduleManager {
 
         this.saveEvents();
 
-        // Supabaseに保存
-        if (typeof supabaseSync !== 'undefined' && supabaseSync.syncEnabled) {
-            await supabaseSync.saveEvent(event);
+        // Supabaseに保存（simpleSyncを使用）
+        if (typeof window.simpleSync !== 'undefined' && window.simpleSync.saveEvent) {
+            await window.simpleSync.saveEvent(event);
         }
 
         this.renderCalendar();
@@ -513,19 +521,45 @@ class ScheduleManager {
 
     // 日程を削除
     async deleteSchedule() {
+        console.log('削除開始 - editingScheduleId:', this.editingScheduleId, 'Type:', typeof this.editingScheduleId);
+
         if (confirm('この日程を削除してもよろしいですか？')) {
             this.saveUndoState();
-            const eventToDelete = this.events.find(e => e.id === this.editingScheduleId);
-            this.events = this.events.filter(e => e.id !== this.editingScheduleId);
-            this.saveEvents();
 
-            // Supabaseから削除
-            if (typeof supabaseSync !== 'undefined' && supabaseSync.syncEnabled && eventToDelete) {
-                await supabaseSync.deleteEvent(eventToDelete.id);
+            // IDの比較を最適化 - 文字列と数値の両方に対応
+            const eventToDelete = this.events.find(e => {
+                // IDを文字列に変換して比較
+                return String(e.id) === String(this.editingScheduleId);
+            });
+
+            console.log('削除対象イベント:', eventToDelete);
+            console.log('削除前のイベント数:', this.events.length);
+
+            if (eventToDelete) {
+                // イベントをフィルタリング
+                this.events = this.events.filter(e => {
+                    // IDを文字列に変換して比較
+                    return String(e.id) !== String(this.editingScheduleId);
+                });
+
+                console.log('削除後のイベント数:', this.events.length);
+                this.saveEvents();
+
+                // Supabaseから削除（simpleSyncを使用）
+                if (typeof window.simpleSync !== 'undefined' && window.simpleSync.deleteEvent) {
+                    console.log('Supabaseから削除:', eventToDelete.id);
+                    await window.simpleSync.deleteEvent(eventToDelete.id);
+                }
+
+                this.showNotification('日程が削除されました');
+            } else {
+                console.error('削除対象が見つかりません');
+                this.showNotification('エラー: 削除対象が見つかりません', 'error');
             }
 
+            // モーダルを閉じる
+            document.getElementById('scheduleEditModal').style.display = 'none';
             this.renderCalendar();
-            this.showNotification('日程が削除されました');
         }
     }
 
@@ -607,7 +641,7 @@ class ScheduleManager {
                         }
 
                         html += `<div class="event-item-plain${textLengthClass}" ${styleAttr}
-                                onclick="event.stopPropagation(); scheduleManager.openScheduleEditModal(${event.id})"
+                                onclick="event.stopPropagation(); scheduleManager.openScheduleEditModal('${event.id}')"
                                 title="${titleText}">`;
                         html += '<div class="event-content">';
                         if (event.time) {
