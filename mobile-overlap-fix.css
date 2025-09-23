@@ -1,0 +1,163 @@
+/* モバイル表示での重なり問題を修正 */
+
+/* スマートフォン表示時の修正 */
+@media (max-width: 768px) {
+    /* 特拡ボタンコンテナ */
+    .campaign-button-container {
+        margin-bottom: 0;
+        padding: 8px;
+        background: #f8f9fa;
+        position: relative;
+        z-index: 1;
+    }
+
+    /* スタッフヘッダーの重なり修正 */
+    .staff-header {
+        position: relative !important; /* stickyを無効化 */
+        top: auto !important;
+        margin-bottom: 0;
+        padding: 8px 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 0;
+        width: 100%;
+        z-index: 10;
+        /* 明確な境界を作る */
+        border-bottom: 3px solid #5a67d8;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    /* スタッフ入力欄のレイアウト */
+    .staff-inputs {
+        display: flex;
+        width: 100%;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        padding: 0;
+        margin: 0;
+        /* 重なり防止 */
+        position: relative;
+        z-index: 11;
+    }
+
+    /* カレンダー部分 */
+    .vertical-calendar {
+        /* スタッフヘッダーと重ならないようにする */
+        margin-top: 10px !important;
+        padding-top: 0;
+        position: relative;
+        z-index: 1;
+        clear: both;
+        width: 100%;
+        overflow-x: auto;
+        overflow-y: visible;
+    }
+
+    .vertical-calendar-grid {
+        /* 上部に余白を追加 */
+        padding-top: 5px;
+        position: relative;
+        width: 100%;
+        min-width: max-content;
+    }
+
+    /* 日付行の調整 */
+    .date-row {
+        position: relative;
+        display: flex;
+        width: 100%;
+        min-height: 35px;
+        border-bottom: 1px solid #e0e0e0;
+        align-items: stretch;
+    }
+
+    /* 日付セルの固定 */
+    .date-cell {
+        position: sticky !important;
+        left: 0;
+        z-index: 5;
+        background: white;
+        border-right: 2px solid #e0e0e0;
+        min-width: 50px;
+        max-width: 50px;
+    }
+
+    /* イベントグリッド */
+    .events-grid {
+        flex: 1;
+        display: flex;
+        overflow-x: auto;
+        gap: 0;
+    }
+
+    /* スタッフセル */
+    .staff-cell {
+        min-width: 80px;
+        padding: 2px;
+        border-right: 1px solid #e0e0e0;
+    }
+
+    /* iOS Safari特有の修正 */
+    @supports (-webkit-touch-callout: none) {
+        .staff-header {
+            /* iOSでのsticky問題を回避 */
+            position: relative !important;
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+        }
+
+        .vertical-calendar {
+            /* スクロールの改善 */
+            -webkit-overflow-scrolling: touch;
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+        }
+
+        /* 重なり防止のための追加マージン */
+        .vertical-calendar-grid {
+            margin-top: 10px;
+        }
+    }
+
+    /* Android Chrome特有の修正 */
+    @supports (not (-webkit-touch-callout: none)) and (display: flex) {
+        .staff-header {
+            position: relative !important;
+            margin-bottom: 5px;
+        }
+    }
+}
+
+/* 小型デバイス（iPhone SE等）向けの追加修正 */
+@media (max-width: 375px) {
+    .staff-header {
+        padding: 6px 0;
+    }
+
+    .staff-inputs {
+        font-size: 10px;
+    }
+
+    .date-cell {
+        min-width: 45px;
+        max-width: 45px;
+        font-size: 10px;
+    }
+
+    .staff-cell {
+        min-width: 70px;
+    }
+}
+
+/* 横向き表示時の修正 */
+@media (max-width: 768px) and (orientation: landscape) {
+    .staff-header {
+        position: relative !important;
+        padding: 5px 0;
+    }
+
+    .vertical-calendar {
+        max-height: calc(100vh - 120px);
+        overflow-y: auto;
+    }
+}

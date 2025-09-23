@@ -98,6 +98,7 @@
         padding: 0;
         width: 100%;
         overflow: visible;
+        position: relative;
         border-radius: 0;
     }
 
@@ -107,6 +108,9 @@
         overflow-x: auto;
         overflow-y: visible;
         -webkit-overflow-scrolling: touch;
+        /* スタッフヘッダーとの重なりを防ぐ */
+        margin-top: 0;
+        position: relative;
         /* iOSでのスクロール問題を修正 */
         transform: translateZ(0);
     }
@@ -122,15 +126,17 @@
 
     /* スタッフヘッダー */
     .staff-header {
-        position: sticky;
-        top: 80px; /* ヘッダーの下に配置 */
+        position: relative; /* stickyからrelativeに変更 */
+        top: 0;
         z-index: 900;
         background: white;
         border-bottom: 2px solid #667eea;
         width: 100%;
-        /* iOSでのstickey問題を修正 */
-        transform: translateZ(0);
-        -webkit-transform: translateZ(0);
+        margin-bottom: 0;
+        padding: 4px 0;
+        /* 重なり防止 */
+        display: block;
+        clear: both;
     }
 
     .staff-inputs {
