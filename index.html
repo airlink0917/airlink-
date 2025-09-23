@@ -10,6 +10,69 @@
     <link rel="stylesheet" href="mobile-fix.css">
     <link rel="stylesheet" href="ios-fix.css">
     <link rel="stylesheet" href="mobile-overlap-fix.css">
+
+    <!-- モバイル表示強制修正 -->
+    <style>
+        @media (max-width: 768px) {
+            .campaign-button-container {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 8px !important;
+                padding: 8px !important;
+                background: #f8f9fa !important;
+            }
+
+            .campaign-button-container .btn-primary {
+                display: block !important;
+                width: 100% !important;
+            }
+
+            .campaign-memo-container {
+                display: block !important;
+                width: 100% !important;
+                visibility: visible !important;
+            }
+
+            .campaign-memo-input {
+                display: block !important;
+                width: 100% !important;
+                padding: 8px !important;
+                font-size: 12px !important;
+                border: 1px solid #ddd !important;
+                border-radius: 4px !important;
+                box-sizing: border-box !important;
+            }
+
+            .filter-container {
+                display: flex !important;
+                width: 100% !important;
+                align-items: center !important;
+                gap: 8px !important;
+                padding: 8px !important;
+                background: white !important;
+                border-radius: 4px !important;
+                border: 1px solid #ddd !important;
+                box-sizing: border-box !important;
+            }
+
+            .filter-container label {
+                display: block !important;
+                font-size: 12px !important;
+                font-weight: 600 !important;
+                color: #333 !important;
+            }
+
+            .staff-filter-select {
+                display: block !important;
+                flex: 1 !important;
+                padding: 6px !important;
+                font-size: 12px !important;
+                border: 1px solid #ddd !important;
+                border-radius: 4px !important;
+                background: white !important;
+            }
+        }
+    </style>
     <!-- Supabase Client Library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>

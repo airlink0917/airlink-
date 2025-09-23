@@ -20,6 +20,33 @@ class ScheduleManager {
         this.updateMemberCheckboxes();
         this.attachEventListeners();
 
+        // モバイル表示デバッグ
+        if (window.innerWidth <= 768) {
+            console.log('Mobile view detected');
+            const memoContainer = document.querySelector('.campaign-memo-container');
+            const filterContainer = document.querySelector('.filter-container');
+
+            if (memoContainer) {
+                console.log('Memo container found:', memoContainer);
+                // 強制的に表示
+                memoContainer.style.display = 'block';
+                memoContainer.style.visibility = 'visible';
+                memoContainer.style.opacity = '1';
+            } else {
+                console.log('Memo container NOT found');
+            }
+
+            if (filterContainer) {
+                console.log('Filter container found:', filterContainer);
+                // 強制的に表示
+                filterContainer.style.display = 'flex';
+                filterContainer.style.visibility = 'visible';
+                filterContainer.style.opacity = '1';
+            } else {
+                console.log('Filter container NOT found');
+            }
+        }
+
         // 備考欄の初期値を設定
         const memoInput = document.getElementById('campaignMemo');
         if (memoInput) {
