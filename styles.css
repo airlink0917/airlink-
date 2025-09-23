@@ -2155,3 +2155,79 @@ header h1 {
         max-height: none !important;
     }
 }
+
+/* モバイル表示の強制修正 */
+@media screen and (max-width: 768px) {
+    .campaign-button-container {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+        padding: 8px !important;
+        background: #f8f9fa !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    .campaign-button-container > * {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    .campaign-memo-container {
+        display: block !important;
+        width: 100% !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    .campaign-memo-input {
+        display: block !important;
+        width: 100% !important;
+        padding: 8px !important;
+        font-size: 12px !important;
+        border: 1px solid #ddd !important;
+        border-radius: 4px !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    .filter-container {
+        display: flex !important;
+        width: 100% !important;
+        align-items: center !important;
+        gap: 8px !important;
+        padding: 8px !important;
+        background: white !important;
+        border-radius: 4px !important;
+        border: 1px solid #ddd !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        min-height: 40px !important;
+    }
+
+    .filter-container label {
+        display: inline-block !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        color: #333 !important;
+        white-space: nowrap !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    .staff-filter-select {
+        display: inline-block !important;
+        flex: 1 !important;
+        padding: 6px 8px !important;
+        font-size: 12px !important;
+        border: 1px solid #ddd !important;
+        border-radius: 4px !important;
+        background: white !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        -webkit-appearance: menulist !important;
+        appearance: menulist !important;
+        min-height: 30px !important;
+    }
+}
