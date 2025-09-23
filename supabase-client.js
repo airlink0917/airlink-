@@ -61,16 +61,19 @@ class SupabaseSync {
             const { data: staffData, error: staffError } = await this.supabase
                 .from('staff_members')
                 .select('*')
-                .order('position');
+                .eq('user_id', 'shared_2025')
+                .order('staff_index');
 
             if (staffError) throw staffError;
 
             if (staffData && staffData.length > 0) {
-                const maxPosition = Math.max(...staffData.map(s => s.position));
+                const maxPosition = Math.max(...staffData.map(s => s.staff_index || 0));
                 const minLength = 9; // 最低9人分の枠を確保
                 const staffArray = new Array(Math.max(maxPosition + 1, minLength)).fill('');
                 staffData.forEach(staff => {
-                    staffArray[staff.position] = staff.name || '';
+                    if (staff.staff_index !== undefined && staff.staff_index !== null) {
+                        staffArray[staff.staff_index] = staff.name || '';
+                    }
                 });
                 scheduleManager.staffMembers = staffArray;
                 scheduleManager.saveStaffMembers();
@@ -84,8 +87,9 @@ class SupabaseSync {
 
             // イベントを読み込み
             const { data: eventsData, error: eventsError } = await this.supabase
-                .from('events')
+                .from('schedule_events')
                 .select('*')
+                .eq('user_id', 'shared_2025')
                 .order('date');
 
             if (eventsError) throw eventsError;
@@ -127,7 +131,7 @@ class SupabaseSync {
             .channel('db-changes')
             .on(
                 'postgres_changes',
-                { event: 'INSERT', schema: 'public', table: 'events' },
+                { event: 'INSERT', schema: 'public', table: 'schedule_events' },
                 async (payload) => {
                     console.log('イベント追加:', payload);
                     await this.handleEventChange({ ...payload, eventType: 'INSERT' });
@@ -135,7 +139,7 @@ class SupabaseSync {
             )
             .on(
                 'postgres_changes',
-                { event: 'UPDATE', schema: 'public', table: 'events' },
+                { event: 'UPDATE', schema: 'public', table: 'schedule_events' },
                 async (payload) => {
                     console.log('イベント更新:', payload);
                     await this.handleEventChange({ ...payload, eventType: 'UPDATE' });
@@ -143,7 +147,7 @@ class SupabaseSync {
             )
             .on(
                 'postgres_changes',
-                { event: 'DELETE', schema: 'public', table: 'events' },
+                { event: 'DELETE', schema: 'public', table: 'schedule_events' },
                 async (payload) => {
                     console.log('イベント削除:', payload);
                     await this.handleEventChange({ ...payload, eventType: 'DELETE' });
@@ -256,6 +260,8 @@ class SupabaseSync {
             this.lastSync = Date.now();
 
             const eventData = {
+                event_id: event.id || ('event_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)),
+                user_id: 'shared_2025', // 全デバイス共通のユーザーID
                 title: event.title,
                 date: event.date,
                 time: event.time || null,
@@ -272,7 +278,7 @@ class SupabaseSync {
                 // 既存イベントの更新
                 console.log('Supabase: イベントを更新します', event.id, eventData);
                 const { data, error } = await this.supabase
-                    .from('events')
+                    .from('schedule_events')
                     .update(eventData)
                     .eq('id', event.id)
                     .select()
@@ -288,7 +294,7 @@ class SupabaseSync {
                 // 新規イベントの作成
                 console.log('Supabase: 新規イベントを作成します', eventData);
                 const { data, error } = await this.supabase
-                    .from('events')
+                    .from('schedule_events')
                     .insert([eventData])
                     .select()
                     .single();
@@ -313,7 +319,7 @@ class SupabaseSync {
 
         try {
             const { error } = await this.supabase
-                .from('events')
+                .from('schedule_events')
                 .delete()
                 .eq('id', eventId);
 
@@ -337,7 +343,7 @@ class SupabaseSync {
             const { error: deleteError } = await this.supabase
                 .from('staff_members')
                 .delete()
-                .gte('position', 0);
+                .eq('user_id', 'shared_2025');
 
             if (deleteError) {
                 console.error('削除エラー:', deleteError);
@@ -346,8 +352,9 @@ class SupabaseSync {
 
             // 新しいスタッフメンバーを挿入（空文字も含めて全ポジションを保存）
             const staffData = staffMembers
-                .map((name, position) => ({
-                    position,
+                .map((name, staff_index) => ({
+                    user_id: 'shared_2025', // 全デバイス共通のユーザーID
+                    staff_index,
                     name: name || ''
                 }));
 
