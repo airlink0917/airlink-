@@ -1,6 +1,65 @@
 /* iOS専用修正CSS - テーブルレイアウトによる完全同期 */
 
 @media (max-width: 768px) {
+    /* 特拡ボタンコンテナ内のフィルター表示 */
+    .campaign-button-container {
+        display: flex !important;
+        flex-direction: column;
+        gap: 8px;
+        padding: 8px;
+        background: #f8f9fa;
+    }
+
+    .filter-container {
+        display: flex !important;
+        width: 100%;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+        padding: 8px;
+        background: white;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    .filter-container label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #333;
+        white-space: nowrap;
+        display: block !important;
+    }
+
+    .staff-filter-select {
+        flex: 1;
+        padding: 6px 8px;
+        font-size: 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: white;
+        display: block !important;
+        visibility: visible !important;
+        -webkit-appearance: menulist;
+        appearance: menulist;
+    }
+
+    /* 備考欄も表示確認 */
+    .campaign-memo-container {
+        display: block !important;
+        width: 100%;
+        margin-bottom: 8px;
+    }
+
+    .campaign-memo-input {
+        width: 100%;
+        padding: 8px;
+        font-size: 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        display: block !important;
+    }
     /* カレンダー全体をテーブルレイアウトに変更 */
     .vertical-calendar {
         display: table;

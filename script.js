@@ -8,11 +8,13 @@ class ScheduleManager {
         this.campaignMemo = this.loadCampaignMemo();
         this.undoHistory = [];
         this.maxUndoSteps = 10;
+        this.selectedStaffFilter = 'all';  // フィルター状態を追加
         this.init();
     }
 
     init() {
         this.initYearSelector();
+        this.initStaffFilter();  // フィルタードロップダウンを初期化
         this.renderStaffHeader();
         this.renderCalendar();
         this.updateMemberCheckboxes();
@@ -101,6 +103,9 @@ class ScheduleManager {
     async saveStaffMembers() {
         localStorage.setItem('staffMembers', JSON.stringify(this.staffMembers));
 
+        // フィルタードロップダウンを更新
+        this.initStaffFilter();
+
         // Supabaseに保存（リアルタイム同期を有効化）
         if (typeof supabaseSync !== 'undefined' && supabaseSync.syncEnabled) {
             const saved = await supabaseSync.saveStaffMembers(this.staffMembers);
@@ -127,8 +132,23 @@ class ScheduleManager {
         const staffInputsDiv = document.getElementById('staffInputs');
         let html = '<div class="date-header-cell">日付</div>'; // 日付ヘッダー
 
-        // CSS変数で担当者数を設定
-        document.documentElement.style.setProperty('--staff-count', this.staffMembers.length);
+        // フィルターに応じて表示するスタッフを決定
+        let staffToShow = [];
+        if (this.selectedStaffFilter === 'all' || !this.selectedStaffFilter) {
+            // 全担当者を表示
+            for (let i = 0; i < this.staffMembers.length; i++) {
+                staffToShow.push({ index: i, name: this.staffMembers[i] });
+            }
+        } else {
+            // 選択された担当者のみ表示
+            const selectedIndex = this.staffMembers.indexOf(this.selectedStaffFilter);
+            if (selectedIndex !== -1) {
+                staffToShow.push({ index: selectedIndex, name: this.selectedStaffFilter });
+            }
+        }
+
+        // CSS変数で表示する担当者数を設定
+        document.documentElement.style.setProperty('--staff-count', staffToShow.length);
 
         // iOS用のレイアウト修正を適用
         setTimeout(() => {
@@ -136,7 +156,8 @@ class ScheduleManager {
         }, 0);
 
         // 担当者入力欄を動的に生成
-        for (let i = 0; i < this.staffMembers.length; i++) {
+        for (let staffInfo of staffToShow) {
+            const i = staffInfo.index;
             html += `
                 <div class="staff-input-cell">
                     <div class="staff-input-wrapper">
@@ -156,8 +177,8 @@ class ScheduleManager {
             `;
         }
 
-        // プラスボタンを追加（最大20人まで）
-        if (this.staffMembers.length < 20) {
+        // プラスボタンを追加（全担当者表示時のみ、最大20人まで）
+        if ((this.selectedStaffFilter === 'all' || !this.selectedStaffFilter) && this.staffMembers.length < 20) {
             html += `
                 <button type="button" class="add-staff-btn" id="addStaffBtn" title="担当者を追加">
                     +
@@ -232,6 +253,26 @@ class ScheduleManager {
         }
     }
 
+    initStaffFilter() {
+        const filterSelect = document.getElementById('staffFilter');
+        if (!filterSelect) return;
+
+        // 既存のオプションをクリア（「全担当者」以外）
+        while (filterSelect.options.length > 1) {
+            filterSelect.remove(1);
+        }
+
+        // 担当者のオプションを追加
+        this.staffMembers.forEach((staffName, index) => {
+            if (staffName && staffName.trim() !== '') {
+                const option = document.createElement('option');
+                option.value = staffName;
+                option.textContent = staffName;
+                filterSelect.appendChild(option);
+            }
+        });
+    }
+
     attachEventListeners() {
         // アンドゥボタン
         document.getElementById('undoBtn').addEventListener('click', () => {
@@ -265,6 +306,15 @@ class ScheduleManager {
             this.currentDate.setFullYear(parseInt(e.target.value));
             this.renderCalendar();
         });
+
+        // スタッフフィルターのイベントリスナー
+        const staffFilter = document.getElementById('staffFilter');
+        if (staffFilter) {
+            staffFilter.addEventListener('change', (e) => {
+                this.selectedStaffFilter = e.target.value;
+                this.renderCalendar();
+            });
+        }
 
         // ウィンドウリサイズ時のレイアウト修正
         window.addEventListener('resize', () => {
@@ -706,8 +756,24 @@ class ScheduleManager {
                 html += '</div>';
             } else {
                 // 特拡がない日は通常の日程を表示
-                for (let i = 0; i < this.staffMembers.length; i++) {
-                const staffName = this.staffMembers[i];
+                // フィルターに応じて表示するスタッフを決定
+                let staffToShow = [];
+                if (this.selectedStaffFilter === 'all' || !this.selectedStaffFilter) {
+                    // 全担当者を表示
+                    for (let i = 0; i < this.staffMembers.length; i++) {
+                        staffToShow.push({ index: i, name: this.staffMembers[i] });
+                    }
+                } else {
+                    // 選択された担当者のみ表示
+                    const selectedIndex = this.staffMembers.indexOf(this.selectedStaffFilter);
+                    if (selectedIndex !== -1) {
+                        staffToShow.push({ index: selectedIndex, name: this.selectedStaffFilter });
+                    }
+                }
+
+                for (let staffInfo of staffToShow) {
+                const i = staffInfo.index;
+                const staffName = staffInfo.name;
                 const staffEvents = dayEvents.filter(event =>
                     event.person === staffName && staffName !== '' && !event.isCampaign
                 );
@@ -916,7 +982,20 @@ class ScheduleManager {
     getFilteredEvents(dateStr) {
         return this.events.filter(event => {
             const dateMatch = event.date === dateStr;
-            const personMatch = !this.filterPerson || event.person === this.filterPerson;
+
+            // スタッフフィルターの処理
+            let personMatch = true;
+            if (this.selectedStaffFilter && this.selectedStaffFilter !== 'all') {
+                // 特拡イベントの場合はcampaignMembersをチェック
+                if (event.isCampaign) {
+                    personMatch = event.campaignMembers &&
+                                  event.campaignMembers.includes(this.selectedStaffFilter);
+                } else {
+                    // 通常イベントの場合はpersonをチェック
+                    personMatch = event.person === this.selectedStaffFilter;
+                }
+            }
+
             return dateMatch && personMatch;
         });
     }
