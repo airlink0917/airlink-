@@ -58,34 +58,26 @@
     /* スタッフ名入力欄 */
     .staff-input {
         width: 100%;
-        padding: 6px 24px 6px 4px !important; /* 右側に削除ボタン分のスペース */
-        font-size: 12px;
+        padding: 8px 6px !important; /* 削除ボタンを非表示にするので右パディング削減 */
+        font-size: 13px;
         border: 1px solid #ddd;
         border-radius: 4px;
         box-sizing: border-box;
+        background: white;
+        /* タップ可能な見た目にする */
+        -webkit-tap-highlight-color: rgba(102, 126, 234, 0.2);
     }
 
-    /* 削除ボタン */
-    .delete-staff-btn {
-        position: absolute;
-        top: 50%;
-        right: 2px;
-        transform: translateY(-50%);
-        background: #dc3545;
-        color: white;
-        border: none;
-        border-radius: 3px;
-        width: 18px;
-        height: 18px;
-        font-size: 12px;
-        line-height: 1;
-        padding: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    /* 読み取り専用時のスタイル */
+    .staff-input[readonly] {
+        background: #f8f9fa;
+        border: 1px solid #667eea;
         cursor: pointer;
-        z-index: 10;
-        opacity: 0.8;
+    }
+
+    /* 削除ボタンをモバイルでは非表示 */
+    .delete-staff-btn {
+        display: none !important;
     }
 
     .delete-staff-btn:hover,
@@ -201,16 +193,9 @@
     }
 
     .staff-input {
-        padding: 4px 20px 4px 3px !important;
-        font-size: 11px;
-    }
-
-    /* より小さい削除ボタン */
-    .delete-staff-btn {
-        width: 16px;
-        height: 16px;
-        font-size: 10px;
-        right: 1px;
+        padding: 6px 4px !important;
+        font-size: 12px;
+        min-height: 28px;
     }
 
     .date-cell {

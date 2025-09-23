@@ -192,6 +192,23 @@
                 </div>
             </div>
         </div>
+
+        <!-- スタッフ編集モーダル -->
+        <div id="staffEditModal" class="modal">
+            <div class="modal-content" style="max-width: 400px;">
+                <span class="close" id="staffEditClose">&times;</span>
+                <h2>担当者を編集</h2>
+                <div class="form-group">
+                    <label>担当者名:</label>
+                    <input type="text" id="editStaffName" placeholder="担当者名を入力">
+                </div>
+                <div class="modal-actions">
+                    <button id="saveStaffBtn" class="btn-primary">保存</button>
+                    <button id="deleteStaffBtn" class="btn-danger">削除</button>
+                    <button id="cancelStaffBtn" class="btn-secondary">キャンセル</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- 一時的に古い同期を無効化 -->

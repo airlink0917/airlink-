@@ -169,6 +169,7 @@ class ScheduleManager {
 
         // Add event listeners for staff input changes
         document.querySelectorAll('.staff-input').forEach(input => {
+            // 変更イベント
             input.addEventListener('change', (e) => {
                 this.saveUndoState();
                 const index = parseInt(e.target.dataset.index);
@@ -177,6 +178,24 @@ class ScheduleManager {
                 this.updateMemberCheckboxes();
                 this.renderCalendar();
             });
+
+            // モバイル用：タップで編集モーダルを開く
+            if (window.innerWidth <= 768) {
+                input.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const index = parseInt(e.target.dataset.index);
+                    this.openStaffEditModal(index);
+                });
+                // タッチイベントも追加
+                input.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    const index = parseInt(e.target.dataset.index);
+                    this.openStaffEditModal(index);
+                });
+                // モバイルでは直接編集を無効化
+                input.readOnly = true;
+                input.style.cursor = 'pointer';
+            }
         });
 
         // Add event listener for add staff button
@@ -379,6 +398,76 @@ class ScheduleManager {
                 btn.classList.add('selected');
             });
         });
+
+        // スタッフ編集モーダルのイベント
+        const staffEditModal = document.getElementById('staffEditModal');
+        document.getElementById('staffEditClose').addEventListener('click', () => {
+            staffEditModal.style.display = 'none';
+        });
+
+        document.getElementById('saveStaffBtn').addEventListener('click', () => {
+            this.saveStaffEdit();
+        });
+
+        document.getElementById('deleteStaffBtn').addEventListener('click', () => {
+            this.deleteStaffFromModal();
+        });
+
+        document.getElementById('cancelStaffBtn').addEventListener('click', () => {
+            staffEditModal.style.display = 'none';
+        });
+    }
+
+    // スタッフ編集モーダルを開く
+    openStaffEditModal(index) {
+        this.editingStaffIndex = index;
+        const staffName = this.staffMembers[index] || '';
+
+        document.getElementById('editStaffName').value = staffName;
+        document.getElementById('staffEditModal').style.display = 'block';
+
+        // 削除ボタンの表示制御
+        const deleteBtn = document.getElementById('deleteStaffBtn');
+        if (this.staffMembers.length <= 1) {
+            deleteBtn.style.display = 'none';
+        } else {
+            deleteBtn.style.display = 'inline-block';
+        }
+    }
+
+    // スタッフ名を保存
+    saveStaffEdit() {
+        const newName = document.getElementById('editStaffName').value.trim();
+        const oldName = this.staffMembers[this.editingStaffIndex];
+
+        if (newName !== oldName) {
+            this.saveUndoState();
+            this.staffMembers[this.editingStaffIndex] = newName;
+            this.saveStaffMembers();
+            this.renderStaffHeader();
+            this.renderCalendar();
+            this.updateMemberCheckboxes();
+            this.showNotification('担当者名を更新しました');
+        }
+
+        document.getElementById('staffEditModal').style.display = 'none';
+    }
+
+    // モーダルからスタッフを削除
+    deleteStaffFromModal() {
+        if (this.staffMembers.length <= 1) {
+            this.showNotification('最低1人の担当者が必要です', 'error');
+            return;
+        }
+
+        const staffName = this.staffMembers[this.editingStaffIndex];
+
+        if (staffName && !confirm(`担当者「${staffName}」を削除しますか？\nこの担当者の日程も削除されます。`)) {
+            return;
+        }
+
+        this.deleteStaffMember(this.editingStaffIndex);
+        document.getElementById('staffEditModal').style.display = 'none';
     }
 
 
