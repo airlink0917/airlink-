@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=3.0, user-scalable=yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>日程管理システム</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="mobile-fix.css">
+    <link rel="stylesheet" href="ios-fix.css">
+    <link rel="stylesheet" href="mobile-overlap-fix.css">
+
+    <!-- モバイル表示強制修正 -->
+    <style>
+        @media (max-width: 768px) {
+            /* 競合するCSSを無効化して正しく表示 */
+            .campaign-button-container {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 8px !important;
+                padding: 8px !important;
+                margin: 0 !important;
+                background: #f8f9fa !important;
+                border: 1px solid #ddd !important;
+                border-radius: 8px !important;
+                position: relative !important;
+                top: auto !important;
+                z-index: 10 !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+            }
+
+            .campaign-button-container .btn-primary {
+                display: block !important;
+                width: 100% !important;
+                padding: 12px !important;
+                font-size: 14px !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+            }
+
+            .campaign-memo-container {
+                display: block !important;
+                width: 100% !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+            }
+
+            .campaign-memo-input {
+                display: block !important;
+                width: 100% !important;
+                padding: 8px !important;
+                font-size: 12px !important;
+                border: 1px solid #ddd !important;
+                border-radius: 4px !important;
+                box-sizing: border-box !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                height: 36px !important;
+            }
+
+            .filter-container {
+                display: flex !important;
+                width: 100% !important;
+                align-items: center !important;
+                gap: 8px !important;
+                padding: 8px !important;
+                margin: 0 !important;
+                background: white !important;
+                border-radius: 4px !important;
+                border: 1px solid #ddd !important;
+                box-sizing: border-box !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                position: relative !important;
+                z-index: 100 !important;
+            }
+
+            .filter-container label {
+                display: block !important;
+                font-size: 12px !important;
+                font-weight: 600 !important;
+                color: #333 !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+            }
+
+            .staff-filter-select {
+                display: block !important;
+                flex: 1 !important;
+                padding: 6px !important;
+                font-size: 12px !important;
+                border: 1px solid #ddd !important;
+                border-radius: 4px !important;
+                background: white !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                position: relative !important;
+                z-index: 101 !important;
+            }
+
+            /* メインコンテンツの調整 */
+            .main-content {
+                padding-top: 100px !important;
+                position: relative !important;
+            }
+
+            /* カレンダーコンテナの調整 */
+            .calendar-container {
+                position: relative !important;
+                z-index: 1 !important;
+            }
+        }
+    </style>
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>日程表</h1>
+            <div class="header-controls">
+                <button id="prevMonth" class="nav-btn">＜ 前月</button>
+                <div class="date-selector">
+                    <select id="yearSelect" class="year-select">
+                        <!-- JavaScriptで動的生成 -->
+                    </select>
+                    <h2 id="currentMonth"></h2>
+                </div>
+                <button id="nextMonth" class="nav-btn">次月 ＞</button>
+                <button id="undoBtn" class="undo-btn" title="元に戻す">← 元に戻す</button>
+                <button id="printBtn" class="print-btn">印刷</button>
+                <span id="syncStatus" style="margin-left: 10px; font-size: 12px; color: #666;"></span>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="calendar-container">
+                <!-- 特拡登録ボタンと備考欄 -->
+                <div class="campaign-button-container">
+                    <button type="button" id="showCampaignFormBtn" class="btn-primary">特拡を登録</button>
+                    <div class="campaign-memo-container">
+                        <input type="text" id="campaignMemo" class="campaign-memo-input" placeholder="備考・メモ">
+                    </div>
+                    <div class="filter-container">
+                        <label for="staffFilter">表示:</label>
+                        <select id="staffFilter" class="staff-filter-select">
+                            <option value="all">全担当者</option>
+                            <!-- 担当者オプションはJavaScriptで動的生成 -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 特拡入力フォーム（非表示） -->
+                <div class="campaign-form" id="campaignForm" style="display: none;">
+                    <div class="form-header">
+                        <h3>特拡登録</h3>
+                        <button type="button" id="closeCampaignFormBtn" class="close-btn">&times;</button>
+                    </div>
+                    <div class="campaign-form-content">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>特拡名:</label>
+                                <select id="campaignType">
+                                    <option value="">選択してください</option>
+                                    <option value="東販連">東販連</option>
+                                    <option value="東部作戦">東部作戦</option>
+                                    <option value="中央作戦">中央作戦</option>
+                                    <option value="城南作戦">城南作戦</option>
+                                    <option value="城北作戦">城北作戦</option>
+                                    <option value="多摩作戦">多摩作戦</option>
+                                    <option value="その他">その他</option>
+                                </select>
+                                <input type="text" id="campaignCustom" placeholder="その他の場合入力" style="display:none;">
+                            </div>
+                            <div class="form-group">
+                                <label>日付:</label>
+                                <input type="date" id="campaignDate">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>参加メンバー: <button type="button" id="selectAllBtn" class="select-all-btn">その他以外を一括選択</button></label>
+                                <div class="member-section">
+                                    <div class="fixed-members">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" value="白木" id="member-shiraki" class="member-checkbox">
+                                            <span>白木</span>
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" value="境野" id="member-sakaino" class="member-checkbox">
+                                            <span>境野</span>
+                                        </label>
+                                    </div>
+                                    <div id="memberCheckboxes" class="member-checkboxes">
+                                        <!-- 担当者のチェックボックスはJavaScriptで動的生成 -->
+                                    </div>
+                                    <div class="other-member">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" id="otherMemberCheck">
+                                            <span>その他:</span>
+                                        </label>
+                                        <input type="text" id="otherMemberName" placeholder="名前を入力" style="display:none;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label>備考:</label>
+                                <textarea id="campaignNote" rows="2" placeholder="備考を入力"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <button type="button" id="addCampaignBtn" class="btn-primary">登録</button>
+                            <button type="button" id="cancelCampaignFormBtn" class="btn-secondary">キャンセル</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="staff-header" id="staffHeader">
+                    <div class="staff-header-label">担当者:</div>
+                    <div class="staff-inputs" id="staffInputs">
+                        <!-- 9人分の担当者入力欄 -->
+                    </div>
+                </div>
+                <div class="vertical-calendar" id="calendar"></div>
+            </div>
+        </div>
+
+        <div id="eventModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2 id="modalTitle"></h2>
+                <div id="modalBody"></div>
+                <div class="modal-actions">
+                    <button id="editEventBtn" class="btn-primary">編集</button>
+                    <button id="deleteEventBtn" class="btn-danger">削除</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 日程編集モーダル -->
+        <div id="scheduleEditModal" class="modal">
+            <div class="modal-content">
+                <span class="close" id="scheduleEditClose">&times;</span>
+                <h2>日程を編集</h2>
+                <div class="form-group">
+                    <label>YC名:</label>
+                    <input type="text" id="editScheduleTitle" placeholder="YC名を入力">
+                </div>
+                <div class="form-group">
+                    <label>色:</label>
+                    <div class="color-picker">
+                        <button type="button" class="color-btn with-text" data-color="#E1BEE7" style="background-color: #E1BEE7;">東販連</button>
+                        <button type="button" class="color-btn with-text" data-color="#81D4FA" style="background-color: #81D4FA;">東部</button>
+                        <button type="button" class="color-btn with-text" data-color="#FFF9C4" style="background-color: #FFF9C4;">中央</button>
+                        <button type="button" class="color-btn with-text" data-color="#F8BBD0" style="background-color: #F8BBD0;">城南</button>
+                        <button type="button" class="color-btn with-text" data-color="#FFCC80" style="background-color: #FFCC80;">城北</button>
+                        <button type="button" class="color-btn with-text" data-color="#FFCDD2" style="background-color: #FFCDD2;">多摩</button>
+                        <button type="button" class="color-btn with-text" data-color="#D4A5A5" style="background-color: #D4A5A5;">埼玉</button>
+                        <button type="button" class="color-btn with-text" data-color="#C8E6C9" style="background-color: #C8E6C9;">その他</button>
+                        <button type="button" class="color-btn with-text" data-color="transparent" style="background-color: white; border: 2px solid #ddd;">なし</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>備考:</label>
+                    <textarea id="editScheduleNote" rows="3" placeholder="備考を入力"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button id="saveScheduleBtn" class="btn-primary">保存</button>
+                    <button id="deleteScheduleBtn" class="btn-danger">削除</button>
+                    <button id="cancelScheduleBtn" class="btn-secondary">キャンセル</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 特拡編集モーダル -->
+        <div id="campaignEditModal" class="modal">
+            <div class="modal-content">
+                <span class="close" id="campaignEditClose">&times;</span>
+                <h2>特拡を編集</h2>
+                <div class="form-group">
+                    <label>特拡名:</label>
+                    <input type="text" id="editCampaignName" readonly>
+                </div>
+                <div class="form-group">
+                    <label>日付:</label>
+                    <input type="date" id="editCampaignDate" readonly>
+                </div>
+                <div class="form-group">
+                    <label>参加メンバー:</label>
+                    <textarea id="editCampaignMembers" rows="3" placeholder="カンマ区切りで入力"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>備考:</label>
+                    <textarea id="editCampaignNote" rows="3"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button id="saveCampaignBtn" class="btn-primary">保存</button>
+                    <button id="cancelCampaignBtn" class="btn-secondary">キャンセル</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- スタッフ編集モーダル -->
+        <div id="staffEditModal" class="modal">
+            <div class="modal-content" style="max-width: 400px;">
+                <span class="close" id="staffEditClose">&times;</span>
+                <h2>担当者を編集</h2>
+                <div class="form-group">
+                    <label>担当者名:</label>
+                    <input type="text" id="editStaffName" placeholder="担当者名を入力">
+                </div>
+                <div class="modal-actions">
+                    <button id="saveStaffBtn" class="btn-primary">保存</button>
+                    <button id="deleteStaffBtn" class="btn-danger">削除</button>
+                    <button id="cancelStaffBtn" class="btn-secondary">キャンセル</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 一時的に古い同期を無効化 -->
+    <!-- <script src="supabase-client.js"></script> -->
+
+    <!-- 新しいシンプル同期システム -->
+    <script src="simple_sync_fix.js"></script>
+
+    <script src="script.js"></script>
+</body>
+</html>
