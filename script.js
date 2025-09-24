@@ -817,8 +817,10 @@ class ScheduleManager {
     }
 
     renderCalendar() {
+        console.log('renderCalendar called');
         const year = this.currentDate.getFullYear();
         const month = this.currentDate.getMonth();
+        console.log('Rendering calendar for:', year, month + 1);
         const firstDay = new Date(year, month, 1).getDay();
         const lastDate = new Date(year, month + 1, 0).getDate();
 
@@ -934,7 +936,15 @@ class ScheduleManager {
         }
 
         html += '</div>';
-        document.getElementById('calendar').innerHTML = html;
+        console.log('Setting calendar HTML, length:', html.length);
+        const calendarElement = document.getElementById('calendar');
+        console.log('Calendar element found:', !!calendarElement);
+        if (calendarElement) {
+            calendarElement.innerHTML = html;
+            console.log('Calendar HTML set successfully');
+        } else {
+            console.error('Calendar element not found!');
+        }
     }
 
     renderWeekEvents() {
@@ -1505,5 +1515,11 @@ class ScheduleManager {
 
 let scheduleManager;
 document.addEventListener('DOMContentLoaded', () => {
-    scheduleManager = new ScheduleManager();
+    console.log('DOM loaded, initializing ScheduleManager');
+    try {
+        scheduleManager = new ScheduleManager();
+        console.log('ScheduleManager initialized successfully');
+    } catch (error) {
+        console.error('Error initializing ScheduleManager:', error);
+    }
 });

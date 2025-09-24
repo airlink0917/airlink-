@@ -75,6 +75,33 @@
     }
 }
 
+/* スタッフヘッダーの白背景対応 */
+.staff-input {
+    background-color: white !important;
+    color: #374151 !important;
+    border: 1px solid #d1d5db !important;
+}
+
+.staff-input:focus {
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1) !important;
+}
+
+.delete-staff-btn {
+    background-color: #ef4444 !important;
+    color: white !important;
+}
+
+.add-staff-btn {
+    background-color: #10b981 !important;
+    color: white !important;
+    border: 1px solid #10b981 !important;
+}
+
+.add-staff-btn:hover {
+    background-color: #059669 !important;
+}
+
 /* モバイル向けスタッフ入力欄の重なり修正 */
 @media (max-width: 640px) {
     /* スタッフ入力欄の幅を固定して重なりを防ぐ */
