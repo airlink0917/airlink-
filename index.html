@@ -197,13 +197,13 @@
     <!-- メインコンテナ -->
     <div class="min-h-screen">
         <!-- ヘッダー -->
-        <header class="gradient-bg text-white shadow-2xl sticky top-0 z-40">
+        <header class="bg-white text-black shadow-2xl sticky top-0 z-40 border-b border-gray-200">
             <div class="container mx-auto px-4 py-4">
                 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                     <!-- タイトル -->
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
                         </div>
@@ -213,34 +213,34 @@
                     <!-- ナビゲーション -->
                     <div class="flex flex-wrap items-center gap-2">
                         <!-- 月移動ボタン -->
-                        <div class="flex items-center bg-white/10 rounded-lg p-1">
-                            <button id="prevMonth" class="no-print px-3 sm:px-4 py-2 rounded-md hover:bg-white/20 transition-all duration-200 text-sm sm:text-base font-medium touchable">
+                        <div class="flex items-center bg-gray-100 rounded-lg p-1">
+                            <button id="prevMonth" class="no-print px-3 sm:px-4 py-2 rounded-md hover:bg-gray-200 transition-all duration-200 text-sm sm:text-base font-medium touchable text-gray-700">
                                 ◀ 前月
                             </button>
                             <div class="flex items-center gap-2 px-3">
-                                <select id="yearSelect" class="no-print bg-transparent border-none text-white font-medium focus:outline-none focus:ring-2 focus:ring-white/30 rounded cursor-pointer px-2 py-1">
+                                <select id="yearSelect" class="no-print bg-transparent border-none text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-gray-300 rounded cursor-pointer px-2 py-1">
                                     <!-- JavaScriptで動的生成 -->
                                 </select>
-                                <span class="text-white font-medium">年</span>
-                                <select id="monthSelect" class="no-print bg-transparent border-none text-white font-medium focus:outline-none focus:ring-2 focus:ring-white/30 rounded cursor-pointer px-2 py-1">
+                                <span class="text-gray-700 font-medium">年</span>
+                                <select id="monthSelect" class="no-print bg-transparent border-none text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-gray-300 rounded cursor-pointer px-2 py-1">
                                     <!-- JavaScriptで動的生成 -->
                                 </select>
-                                <span class="text-white font-medium">月</span>
+                                <span class="text-gray-700 font-medium">月</span>
                             </div>
-                            <button id="nextMonth" class="no-print px-3 sm:px-4 py-2 rounded-md hover:bg-white/20 transition-all duration-200 text-sm sm:text-base font-medium touchable">
+                            <button id="nextMonth" class="no-print px-3 sm:px-4 py-2 rounded-md hover:bg-gray-200 transition-all duration-200 text-sm sm:text-base font-medium touchable text-gray-700">
                                 次月 ▶
                             </button>
                         </div>
 
                         <!-- アクションボタン -->
-                        <button id="undoBtn" class="no-print bg-white/20 hover:bg-white/30 px-3 sm:px-4 py-2 rounded-lg text-sm sm:text-base font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 sm:gap-2 touchable header-btn">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <button id="undoBtn" class="no-print bg-gray-100 hover:bg-gray-200 px-3 sm:px-4 py-2 rounded-lg text-sm sm:text-base font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 sm:gap-2 touchable header-btn text-gray-700">
+                            <svg class="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
                             </svg>
                             元に戻す
                         </button>
                         <button id="printBtn" class="no-print bg-green-500 hover:bg-green-600 px-3 sm:px-4 py-2 rounded-lg text-sm sm:text-base font-medium transition-all duration-200 flex items-center gap-1 sm:gap-2 touchable header-btn">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
                             </svg>
                             印刷
@@ -249,7 +249,7 @@
                 </div>
 
                 <!-- 同期ステータス -->
-                <div id="syncStatus" class="text-sm text-white/80 mt-2"></div>
+                <div id="syncStatus" class="text-sm text-gray-600 mt-2"></div>
             </div>
         </header>
 
