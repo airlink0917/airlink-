@@ -1387,20 +1387,22 @@ header h1 {
     /* スタッフヘッダーのモバイル対応 */
     .staff-header {
         padding: 2px 0;
-        position: sticky;
-        top: 0;
-        background: white;
-        z-index: 10;
+        position: relative;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        z-index: 5;
+        margin-bottom: 2px;
     }
 
     .staff-inputs {
         display: grid;
-        grid-template-columns: 40px repeat(9, 1fr);
-        gap: 2px;
+        grid-template-columns: 40px repeat(var(--staff-count, 9), 1fr);
+        gap: 1px;
         padding: 4px;
         font-size: 10px;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+        position: relative;
+        z-index: 1;
     }
 
     .date-header-cell {
@@ -1419,16 +1421,20 @@ header h1 {
     .staff-input-cell {
         min-width: auto;
         padding: 1px;
+        position: relative;
+        overflow: visible;
     }
 
     .staff-input {
-        min-width: 100%;
-        font-size: 11px;
-        padding: 4px 2px;
-        height: 28px;
+        width: 100%;
+        font-size: 10px;
+        padding: 3px 2px;
+        height: 26px;
         border: 1px solid #ddd;
-        border-radius: 4px;
+        border-radius: 3px;
         -webkit-appearance: none;
+        text-align: center;
+        background: white;
     }
 
     /* カレンダーのモバイル対応 - 超コンパクト化 */
@@ -1469,7 +1475,11 @@ header h1 {
     }
 
     .campaign-button-container {
-        display: none; /* モバイルでは非表示 */
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+        padding: 8px !important;
+        margin-bottom: 10px !important;
     }
 
     .date-number {
@@ -1486,7 +1496,7 @@ header h1 {
 
     .events-grid {
         display: grid;
-        grid-template-columns: repeat(9, 1fr);
+        grid-template-columns: repeat(var(--staff-count, 9), 1fr);
         gap: 0;
         padding: 0;
         overflow-x: auto;
@@ -1636,10 +1646,11 @@ header h1 {
     }
 
     .staff-inputs {
-        grid-template-columns: 35px repeat(var(--staff-count, 9), minmax(40px, 1fr));
+        grid-template-columns: 35px repeat(var(--staff-count, 9), minmax(35px, 1fr));
         gap: 1px;
         padding: 2px;
-        min-width: calc(35px + var(--staff-count, 9) * 40px);
+        min-width: 100%;
+        overflow-x: auto;
     }
 
     .date-header-cell {
@@ -1649,9 +1660,16 @@ header h1 {
     }
 
     .staff-input {
-        font-size: 10px;
-        padding: 3px 2px;
-        height: 24px;
+        font-size: 9px;
+        padding: 2px 1px;
+        height: 22px;
+        width: 100%;
+        min-width: 30px;
+    }
+
+    .staff-input-cell {
+        min-width: 35px;
+        width: auto;
     }
 
     .date-cell {
@@ -1697,22 +1715,6 @@ header h1 {
         font-size: 9px;
     }
 
-    .staff-input {
-        font-size: 6px;
-        height: 10px;
-    }
-
-    .date-number {
-        font-size: 6px;
-    }
-
-    .event-title-small {
-        font-size: 4px !important;
-    }
-
-    .event-cell {
-        font-size: 4px;
-    }
 }
 
 /* タッチデバイス用の調整 */
@@ -2113,6 +2115,10 @@ header h1 {
         display: none !important;
     }
 
+    .add-staff-btn {
+        display: none !important;
+    }
+
     /* スクロールバーを非表示 */
     ::-webkit-scrollbar {
         display: none !important;
@@ -2166,6 +2172,8 @@ header h1 {
         background: #f8f9fa !important;
         visibility: visible !important;
         opacity: 1 !important;
+        position: relative !important;
+        z-index: 1 !important;
     }
 
     .campaign-button-container > * {
@@ -2184,12 +2192,13 @@ header h1 {
     .campaign-memo-input {
         display: block !important;
         width: 100% !important;
-        padding: 8px !important;
-        font-size: 12px !important;
+        padding: 6px !important;
+        font-size: 11px !important;
         border: 1px solid #ddd !important;
         border-radius: 4px !important;
         visibility: visible !important;
         opacity: 1 !important;
+        height: 28px !important;
     }
 
     .filter-container {
@@ -2198,12 +2207,16 @@ header h1 {
         align-items: center !important;
         gap: 8px !important;
         padding: 8px !important;
+        margin-left: 0 !important;
+        margin-bottom: 8px !important;
         background: white !important;
         border-radius: 4px !important;
         border: 1px solid #ddd !important;
         visibility: visible !important;
         opacity: 1 !important;
         min-height: 40px !important;
+        position: relative !important;
+        z-index: 2 !important;
     }
 
     .filter-container label {
@@ -2220,7 +2233,7 @@ header h1 {
         display: inline-block !important;
         flex: 1 !important;
         padding: 6px 8px !important;
-        font-size: 12px !important;
+        font-size: 11px !important;
         border: 1px solid #ddd !important;
         border-radius: 4px !important;
         background: white !important;
@@ -2228,6 +2241,7 @@ header h1 {
         opacity: 1 !important;
         -webkit-appearance: menulist !important;
         appearance: menulist !important;
-        min-height: 30px !important;
+        min-height: 28px !important;
+        max-width: 60% !important;
     }
 }
