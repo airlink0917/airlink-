@@ -1748,6 +1748,28 @@ header h1 {
     }
 }
 
+/* 年月選択のスタイル */
+#yearSelect, #monthSelect {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+    padding: 5px 10px !important;
+    border-radius: 6px !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    font-weight: 600 !important;
+    font-size: 16px !important;
+    min-width: 60px !important;
+    text-align: center !important;
+}
+
+#yearSelect:hover, #monthSelect:hover {
+    background-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+#yearSelect:focus, #monthSelect:focus {
+    outline: 2px solid rgba(255, 255, 255, 0.5) !important;
+    outline-offset: 2px !important;
+}
+
 /* 印刷用スタイル */
 @media print {
     @page {

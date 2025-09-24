@@ -14,6 +14,7 @@ class ScheduleManager {
 
     init() {
         this.initYearSelector();
+        this.initMonthSelector();  // 月選択の初期化
         this.initStaffFilter();  // フィルタードロップダウンを初期化
         this.renderStaffHeader();
         this.renderCalendar();
@@ -280,11 +281,32 @@ class ScheduleManager {
         for (let year = startYear; year <= endYear; year++) {
             const option = document.createElement('option');
             option.value = year;
-            option.textContent = `${year}年`;
+            option.textContent = `${year}`;
             if (year === this.currentDate.getFullYear()) {
                 option.selected = true;
             }
             yearSelect.appendChild(option);
+        }
+    }
+
+    initMonthSelector() {
+        const monthSelect = document.getElementById('monthSelect');
+        if (!monthSelect) {
+            console.error('monthSelect element not found');
+            return;
+        }
+
+        // 既存のオプションをクリア
+        monthSelect.innerHTML = '';
+
+        for (let month = 1; month <= 12; month++) {
+            const option = document.createElement('option');
+            option.value = month;
+            option.textContent = `${month}`;
+            if (month === this.currentDate.getMonth() + 1) {
+                option.selected = true;
+            }
+            monthSelect.appendChild(option);
         }
     }
 
@@ -339,6 +361,7 @@ class ScheduleManager {
             prevMonth.addEventListener('click', () => {
                 this.currentDate.setMonth(this.currentDate.getMonth() - 1);
                 this.updateYearSelector();
+                this.updateMonthSelector();
                 this.renderCalendar();
             });
         }
@@ -348,6 +371,7 @@ class ScheduleManager {
             nextMonth.addEventListener('click', () => {
                 this.currentDate.setMonth(this.currentDate.getMonth() + 1);
                 this.updateYearSelector();
+                this.updateMonthSelector();
                 this.renderCalendar();
             });
         }
@@ -356,6 +380,15 @@ class ScheduleManager {
         if (yearSelect) {
             yearSelect.addEventListener('change', (e) => {
                 this.currentDate.setFullYear(parseInt(e.target.value));
+                this.renderCalendar();
+            });
+        }
+
+        const monthSelect = document.getElementById('monthSelect');
+        if (monthSelect) {
+            monthSelect.addEventListener('change', (e) => {
+                this.currentDate.setMonth(parseInt(e.target.value) - 1);
+                this.updateYearSelector();  // 年が変わった場合に備えて
                 this.renderCalendar();
             });
         }
@@ -789,10 +822,7 @@ class ScheduleManager {
         const firstDay = new Date(year, month, 1).getDay();
         const lastDate = new Date(year, month + 1, 0).getDate();
 
-        const monthElement = document.getElementById('currentMonth');
-        if (monthElement) {
-            monthElement.textContent = `${month + 1}月`;
-        }
+        // 月表示はmonthSelectで管理するため削除
 
         let html = '<div class="vertical-calendar-grid">';
 
@@ -1304,7 +1334,16 @@ class ScheduleManager {
 
     updateYearSelector() {
         const yearSelect = document.getElementById('yearSelect');
-        yearSelect.value = this.currentDate.getFullYear();
+        if (yearSelect) {
+            yearSelect.value = this.currentDate.getFullYear();
+        }
+    }
+
+    updateMonthSelector() {
+        const monthSelect = document.getElementById('monthSelect');
+        if (monthSelect) {
+            monthSelect.value = this.currentDate.getMonth() + 1;
+        }
     }
 
     printCalendar() {
