@@ -1330,6 +1330,11 @@ header h1 {
     }
 
     .calendar-container {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .calendar-container {
         padding: 3px;
         max-width: 100%;
         flex: 1;
@@ -1402,7 +1407,8 @@ header h1 {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
         position: relative;
-        z-index: 1;
+        z-index: 10;
+        order: 2;
     }
 
     .date-header-cell {
@@ -2174,6 +2180,7 @@ header h1 {
         opacity: 1 !important;
         position: relative !important;
         z-index: 1 !important;
+        order: 1;
     }
 
     .campaign-button-container > * {
@@ -2208,6 +2215,7 @@ header h1 {
         gap: 8px !important;
         padding: 8px !important;
         margin-left: 0 !important;
+        margin-top: 10px !important;
         margin-bottom: 8px !important;
         background: white !important;
         border-radius: 4px !important;
@@ -2216,7 +2224,8 @@ header h1 {
         opacity: 1 !important;
         min-height: 40px !important;
         position: relative !important;
-        z-index: 2 !important;
+        z-index: 50 !important;
+        order: 3 !important;
     }
 
     .filter-container label {
@@ -2243,5 +2252,7 @@ header h1 {
         appearance: menulist !important;
         min-height: 28px !important;
         max-width: 60% !important;
+        position: relative !important;
+        z-index: 100 !important;
     }
 }
