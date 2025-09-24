@@ -1330,11 +1330,6 @@ header h1 {
     }
 
     .calendar-container {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .calendar-container {
         padding: 3px;
         max-width: 100%;
         flex: 1;
@@ -1486,6 +1481,9 @@ header h1 {
         gap: 8px !important;
         padding: 8px !important;
         margin-bottom: 10px !important;
+        background: #f8f9fa !important;
+        border-radius: 8px !important;
+        border: 1px solid #e0e0e0 !important;
     }
 
     .date-number {
@@ -2179,8 +2177,20 @@ header h1 {
         visibility: visible !important;
         opacity: 1 !important;
         position: relative !important;
-        z-index: 1 !important;
+        z-index: 10 !important;
         order: 1;
+        border: 1px solid #ddd !important;
+        border-radius: 8px !important;
+        margin-bottom: 10px !important;
+    }
+
+    .campaign-button-container .btn-primary {
+        display: block !important;
+        width: 100% !important;
+        padding: 12px !important;
+        font-size: 14px !important;
+        visibility: visible !important;
+        opacity: 1 !important;
     }
 
     .campaign-button-container > * {
@@ -2214,9 +2224,7 @@ header h1 {
         align-items: center !important;
         gap: 8px !important;
         padding: 8px !important;
-        margin-left: 0 !important;
-        margin-top: 10px !important;
-        margin-bottom: 8px !important;
+        margin: 10px 0 8px 0 !important;
         background: white !important;
         border-radius: 4px !important;
         border: 1px solid #ddd !important;
@@ -2226,6 +2234,7 @@ header h1 {
         position: relative !important;
         z-index: 50 !important;
         order: 3 !important;
+        flex-shrink: 0 !important;
     }
 
     .filter-container label {
