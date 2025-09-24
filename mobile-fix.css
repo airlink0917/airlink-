@@ -1,3 +1,80 @@
+/* モバイル向けヘッダーの余白最適化 */
+@media (max-width: 768px) {
+    /* ヘッダー全体のパディングを縮小 */
+    header .container {
+        padding-top: 0.75rem !important;  /* py-3 */
+        padding-bottom: 0.75rem !important;
+    }
+
+    /* タイトルとナビゲーション間の余白を縮小 */
+    header .flex.flex-col {
+        gap: 0.5rem !important;  /* gap-2 */
+    }
+
+    /* ナビゲーションボタン群の余白を縮小 */
+    .flex.flex-wrap.items-center {
+        gap: 0.25rem !important;  /* gap-1 */
+    }
+
+    /* 同期ステータスの上部マージンを縮小 */
+    #syncStatus {
+        margin-top: 0.25rem !important;  /* mt-1 */
+    }
+
+    /* タイトルのサイズを縮小 */
+    header h1 {
+        font-size: 1.25rem !important;  /* text-xl */
+    }
+
+    /* ボタンのパディングを縮小 */
+    .header-btn {
+        padding: 0.375rem 0.75rem !important;  /* px-3 py-1.5 */
+    }
+
+    /* アイコンのサイズを縮小 */
+    .header-btn svg {
+        width: 1rem !important;  /* w-4 */
+        height: 1rem !important;  /* h-4 */
+    }
+
+    /* 年月選択コンテナの余白を縮小 */
+    .flex.items-center.gap-2.px-3 {
+        padding: 0.375rem 0.5rem !important;  /* px-2 py-1.5 */
+        gap: 0.25rem !important;  /* gap-1 */
+    }
+}
+
+/* より小さい画面での追加最適化 */
+@media (max-width: 480px) {
+    /* ヘッダー全体をさらにコンパクトに */
+    header .container {
+        padding-top: 0.5rem !important;  /* py-2 */
+        padding-bottom: 0.5rem !important;
+    }
+
+    /* タイトルとナビゲーション間の余白をさらに縮小 */
+    header .flex.flex-col {
+        gap: 0.25rem !important;  /* gap-1 */
+    }
+
+    /* タイトルをさらに小さく */
+    header h1 {
+        font-size: 1.125rem !important;  /* text-lg */
+    }
+
+    /* ボタンのテキストサイズを縮小 */
+    .header-btn {
+        font-size: 0.75rem !important;  /* text-xs */
+        padding: 0.25rem 0.5rem !important;  /* px-2 py-1 */
+    }
+
+    /* アイコンボタンのサイズをさらに縮小 */
+    header .w-10.h-10 {
+        width: 2rem !important;  /* w-8 */
+        height: 2rem !important;  /* h-8 */
+    }
+}
+
 /* モバイル向けスタッフ入力欄の重なり修正 */
 @media (max-width: 640px) {
     /* スタッフ入力欄の幅を固定して重なりを防ぐ */
