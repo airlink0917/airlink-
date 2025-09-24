@@ -265,9 +265,17 @@ class ScheduleManager {
 
     initYearSelector() {
         const yearSelect = document.getElementById('yearSelect');
+        if (!yearSelect) {
+            console.error('yearSelect element not found');
+            return;
+        }
+
         const currentYear = new Date().getFullYear();
         const startYear = currentYear - 5;
         const endYear = currentYear + 5;
+
+        // 既存のオプションをクリア
+        yearSelect.innerHTML = '';
 
         for (let year = startYear; year <= endYear; year++) {
             const option = document.createElement('option');
@@ -302,37 +310,55 @@ class ScheduleManager {
 
     attachEventListeners() {
         // アンドゥボタン
-        document.getElementById('undoBtn').addEventListener('click', () => {
-            this.undo();
-        });
+        const undoBtn = document.getElementById('undoBtn');
+        if (undoBtn) {
+            undoBtn.addEventListener('click', () => {
+                this.undo();
+            });
+        }
 
         // 備考欄のイベントリスナー
-        document.getElementById('campaignMemo').addEventListener('input', (e) => {
-            this.campaignMemo = e.target.value;
-            this.saveCampaignMemo(this.campaignMemo);
-        });
+        const campaignMemo = document.getElementById('campaignMemo');
+        if (campaignMemo) {
+            campaignMemo.addEventListener('input', (e) => {
+                this.campaignMemo = e.target.value;
+                this.saveCampaignMemo(this.campaignMemo);
+            });
+        }
 
         // 印刷ボタン
-        document.getElementById('printBtn').addEventListener('click', () => {
-            this.printCalendar();
-        });
+        const printBtn = document.getElementById('printBtn');
+        if (printBtn) {
+            printBtn.addEventListener('click', () => {
+                this.printCalendar();
+            });
+        }
 
-        document.getElementById('prevMonth').addEventListener('click', () => {
-            this.currentDate.setMonth(this.currentDate.getMonth() - 1);
-            this.updateYearSelector();
-            this.renderCalendar();
-        });
+        const prevMonth = document.getElementById('prevMonth');
+        if (prevMonth) {
+            prevMonth.addEventListener('click', () => {
+                this.currentDate.setMonth(this.currentDate.getMonth() - 1);
+                this.updateYearSelector();
+                this.renderCalendar();
+            });
+        }
 
-        document.getElementById('nextMonth').addEventListener('click', () => {
-            this.currentDate.setMonth(this.currentDate.getMonth() + 1);
-            this.updateYearSelector();
-            this.renderCalendar();
-        });
+        const nextMonth = document.getElementById('nextMonth');
+        if (nextMonth) {
+            nextMonth.addEventListener('click', () => {
+                this.currentDate.setMonth(this.currentDate.getMonth() + 1);
+                this.updateYearSelector();
+                this.renderCalendar();
+            });
+        }
 
-        document.getElementById('yearSelect').addEventListener('change', (e) => {
-            this.currentDate.setFullYear(parseInt(e.target.value));
-            this.renderCalendar();
-        });
+        const yearSelect = document.getElementById('yearSelect');
+        if (yearSelect) {
+            yearSelect.addEventListener('change', (e) => {
+                this.currentDate.setFullYear(parseInt(e.target.value));
+                this.renderCalendar();
+            });
+        }
 
         // スタッフフィルターのイベントリスナー
         const staffFilter = document.getElementById('staffFilter');
@@ -356,54 +382,82 @@ class ScheduleManager {
         });
 
         // 特拡タイプ選択時の処理
-        document.getElementById('campaignType').addEventListener('change', (e) => {
-            const customInput = document.getElementById('campaignCustom');
-            if (e.target.value === 'その他') {
-                customInput.style.display = 'inline-block';
-                customInput.required = true;
-            } else {
-                customInput.style.display = 'none';
-                customInput.required = false;
-                customInput.value = '';
-            }
-        });
+        const campaignType = document.getElementById('campaignType');
+        if (campaignType) {
+            campaignType.addEventListener('change', (e) => {
+                const customInput = document.getElementById('campaignCustom');
+                if (customInput) {
+                    if (e.target.value === 'その他') {
+                        customInput.style.display = 'inline-block';
+                        customInput.required = true;
+                    } else {
+                        customInput.style.display = 'none';
+                        customInput.required = false;
+                        customInput.value = '';
+                    }
+                }
+            });
+        }
 
         // 特拡フォームの表示・非表示
-        document.getElementById('showCampaignFormBtn').addEventListener('click', () => {
-            document.getElementById('campaignForm').style.display = 'block';
-            document.getElementById('showCampaignFormBtn').style.display = 'none';
-        });
+        const showCampaignFormBtn = document.getElementById('showCampaignFormBtn');
+        if (showCampaignFormBtn) {
+            showCampaignFormBtn.addEventListener('click', () => {
+                const campaignForm = document.getElementById('campaignForm');
+                if (campaignForm) {
+                    campaignForm.style.display = 'block';
+                }
+                showCampaignFormBtn.style.display = 'none';
+            });
+        }
 
-        document.getElementById('closeCampaignFormBtn').addEventListener('click', () => {
-            this.closeCampaignForm();
-        });
+        const closeCampaignBtn = document.getElementById('closeCampaignFormBtn');
+        if (closeCampaignBtn) {
+            closeCampaignBtn.addEventListener('click', () => {
+                this.closeCampaignForm();
+            });
+        }
 
-        document.getElementById('cancelCampaignFormBtn').addEventListener('click', () => {
-            this.closeCampaignForm();
-        });
+        const cancelCampaignBtn = document.getElementById('cancelCampaignFormBtn');
+        if (cancelCampaignBtn) {
+            cancelCampaignBtn.addEventListener('click', () => {
+                this.closeCampaignForm();
+            });
+        }
 
         // 特拡登録ボタン
-        document.getElementById('addCampaignBtn').addEventListener('click', () => {
-            this.addCampaign();
-        });
+        const addCampaignBtn = document.getElementById('addCampaignBtn');
+        if (addCampaignBtn) {
+            addCampaignBtn.addEventListener('click', () => {
+                this.addCampaign();
+            });
+        }
 
         // その他メンバーチェックボックス
-        document.getElementById('otherMemberCheck').addEventListener('change', (e) => {
-            const otherInput = document.getElementById('otherMemberName');
-            if (e.target.checked) {
-                otherInput.style.display = 'inline-block';
-                otherInput.required = true;
-            } else {
-                otherInput.style.display = 'none';
-                otherInput.required = false;
-                otherInput.value = '';
-            }
-        });
+        const otherMemberCheck = document.getElementById('otherMemberCheck');
+        if (otherMemberCheck) {
+            otherMemberCheck.addEventListener('change', (e) => {
+                const otherInput = document.getElementById('otherMemberName');
+                if (otherInput) {
+                    if (e.target.checked) {
+                        otherInput.style.display = 'inline-block';
+                        otherInput.required = true;
+                    } else {
+                        otherInput.style.display = 'none';
+                        otherInput.required = false;
+                        otherInput.value = '';
+                    }
+                }
+            });
+        }
 
         // 一括選択ボタン
-        document.getElementById('selectAllBtn').addEventListener('click', () => {
-            this.selectAllMembers();
-        });
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        if (selectAllBtn) {
+            selectAllBtn.addEventListener('click', () => {
+                this.selectAllMembers();
+            });
+        }
 
         const modal = document.getElementById('eventModal');
         const closeBtn = document.querySelector('.close');
@@ -735,7 +789,10 @@ class ScheduleManager {
         const firstDay = new Date(year, month, 1).getDay();
         const lastDate = new Date(year, month + 1, 0).getDate();
 
-        document.getElementById('currentMonth').textContent = `${month + 1}月`;
+        const monthElement = document.getElementById('currentMonth');
+        if (monthElement) {
+            monthElement.textContent = `${month + 1}月`;
+        }
 
         let html = '<div class="vertical-calendar-grid">';
 
