@@ -157,7 +157,7 @@ class ScheduleManager {
 
     renderStaffHeader() {
         const staffInputsDiv = document.getElementById('staffInputs');
-        let html = '<div class="date-header-cell">日付</div>'; // 日付ヘッダー
+        let html = '<div class="flex-shrink-0 w-24 flex items-center justify-center font-semibold">日付</div>'; // 日付ヘッダー
 
         // フィルターに応じて表示するスタッフを決定
         let staffToShow = [];
@@ -186,16 +186,16 @@ class ScheduleManager {
         for (let staffInfo of staffToShow) {
             const i = staffInfo.index;
             html += `
-                <div class="staff-input-cell">
-                    <div class="staff-input-wrapper">
+                <div class="staff-input-cell flex-shrink-0" data-index="${i}">
+                    <div class="staff-input-wrapper relative">
                         <input type="text"
-                               class="staff-input"
+                               class="staff-input w-32 sm:w-32 px-2 sm:px-3 py-2 bg-white/90 text-gray-800 rounded-lg text-xs sm:text-sm font-medium placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white focus:bg-white transition-all touchable"
                                id="staff-${i}"
-                               placeholder="担当者"
+                               placeholder="担当者${i + 1}"
                                value="${this.staffMembers[i] || ''}"
                                data-index="${i}">
                         ${this.staffMembers.length > 1 ? `
-                            <button type="button" class="delete-staff-btn" data-index="${i}" title="削除">
+                            <button type="button" class="delete-staff-btn absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs hover:bg-red-600 transition-all no-print" data-index="${i}" title="削除">
                                 ×
                             </button>
                         ` : ''}
@@ -207,8 +207,11 @@ class ScheduleManager {
         // プラスボタンを追加（全担当者表示時のみ、最大20人まで）
         if ((this.selectedStaffFilter === 'all' || !this.selectedStaffFilter) && this.staffMembers.length < 20) {
             html += `
-                <button type="button" class="add-staff-btn" id="addStaffBtn" title="担当者を追加">
-                    +
+                <button type="button" class="add-staff-btn no-print flex-shrink-0 bg-green-500 hover:bg-green-600 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-1 touchable" id="addStaffBtn" title="担当者を追加">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    追加
                 </button>
             `;
         }

@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=3.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>日程管理システム</title>
@@ -286,45 +287,8 @@
             <div class="bg-white rounded-2xl shadow-lg overflow-hidden animate-slideIn">
                 <!-- スタッフヘッダー -->
                 <div class="staff-header gradient-bg text-white">
-                    <div class="staff-inputs flex p-3 gap-2 overflow-x-auto custom-scrollbar">
-                        <div class="flex-shrink-0 w-24 flex items-center justify-center font-semibold">
-                            日付
-                        </div>
-                        <!-- スタッフ入力欄（JavaScriptで動的生成も可能） -->
-                        <div class="staff-input-cell flex-shrink-0" data-index="0">
-                            <input type="text" class="staff-input w-32 sm:w-32 px-2 sm:px-3 py-2 bg-white/90 text-gray-800 rounded-lg text-xs sm:text-sm font-medium placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white focus:bg-white transition-all touchable" placeholder="担当者1" data-index="0">
-                        </div>
-                        <div class="staff-input-cell flex-shrink-0" data-index="1">
-                            <input type="text" class="staff-input w-32 sm:w-32 px-2 sm:px-3 py-2 bg-white/90 text-gray-800 rounded-lg text-xs sm:text-sm font-medium placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white focus:bg-white transition-all touchable" placeholder="担当者2" data-index="1">
-                        </div>
-                        <div class="staff-input-cell flex-shrink-0" data-index="2">
-                            <input type="text" class="staff-input w-32 sm:w-32 px-2 sm:px-3 py-2 bg-white/90 text-gray-800 rounded-lg text-xs sm:text-sm font-medium placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white focus:bg-white transition-all touchable" placeholder="担当者3" data-index="2">
-                        </div>
-                        <div class="staff-input-cell flex-shrink-0" data-index="3">
-                            <input type="text" class="staff-input w-32 sm:w-32 px-2 sm:px-3 py-2 bg-white/90 text-gray-800 rounded-lg text-xs sm:text-sm font-medium placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white focus:bg-white transition-all touchable" placeholder="担当者4" data-index="3">
-                        </div>
-                        <div class="staff-input-cell flex-shrink-0" data-index="4">
-                            <input type="text" class="staff-input w-32 sm:w-32 px-2 sm:px-3 py-2 bg-white/90 text-gray-800 rounded-lg text-xs sm:text-sm font-medium placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white focus:bg-white transition-all touchable" placeholder="担当者5" data-index="4">
-                        </div>
-                        <div class="staff-input-cell flex-shrink-0" data-index="5">
-                            <input type="text" class="staff-input w-32 sm:w-32 px-2 sm:px-3 py-2 bg-white/90 text-gray-800 rounded-lg text-xs sm:text-sm font-medium placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white focus:bg-white transition-all touchable" placeholder="担当者6" data-index="5">
-                        </div>
-                        <div class="staff-input-cell flex-shrink-0" data-index="6">
-                            <input type="text" class="staff-input w-32 sm:w-32 px-2 sm:px-3 py-2 bg-white/90 text-gray-800 rounded-lg text-xs sm:text-sm font-medium placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white focus:bg-white transition-all touchable" placeholder="担当者7" data-index="6">
-                        </div>
-                        <div class="staff-input-cell flex-shrink-0" data-index="7">
-                            <input type="text" class="staff-input w-32 sm:w-32 px-2 sm:px-3 py-2 bg-white/90 text-gray-800 rounded-lg text-xs sm:text-sm font-medium placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white focus:bg-white transition-all touchable" placeholder="担当者8" data-index="7">
-                        </div>
-                        <div class="staff-input-cell flex-shrink-0" data-index="8">
-                            <input type="text" class="staff-input w-32 sm:w-32 px-2 sm:px-3 py-2 bg-white/90 text-gray-800 rounded-lg text-xs sm:text-sm font-medium placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white focus:bg-white transition-all touchable" placeholder="担当者9" data-index="8">
-                        </div>
-                        <!-- 追加ボタン -->
-                        <button id="addStaffBtn" class="no-print flex-shrink-0 bg-green-500 hover:bg-green-600 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-1 touchable">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                            </svg>
-                            追加
-                        </button>
+                    <div id="staffInputs" class="staff-inputs flex p-3 gap-2 overflow-x-auto custom-scrollbar">
+                        <!-- JavaScriptで動的生成 -->
                     </div>
                 </div>
 
