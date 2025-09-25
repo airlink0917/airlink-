@@ -47,9 +47,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Supabaseから最新データを取得
     await syncData();
 
-    // 定期同期（モバイルは10秒、デスクトップは5秒）
-    const syncInterval = isMobileDevice() ? 10000 : 5000;
-    setInterval(syncData, syncInterval);
+    // 定期同期を無効化（手動同期のみ）
+    // 同期エラーを防ぐため、自動同期を停止
+    // const syncInterval = isMobileDevice() ? 10000 : 5000;
+    // setInterval(syncData, syncInterval);
 
     // ページ表示時に強制同期
     document.addEventListener('visibilitychange', () => {
@@ -193,24 +194,50 @@ function attachStaffInputListeners() {
 
     // 入力欄のイベント
     inputs.forEach(input => {
-        // モバイルではchangeイベントのみ使用
         if (isMobileDevice()) {
-            // changeイベント（入力完了・フォーカスアウト時）
-            input.addEventListener('change', (e) => {
+            // モバイル用: inputイベントでリアルタイム更新（レンダリングはしない）
+            let mobileInputTimer = null;
+
+            // inputイベント（リアルタイム入力）
+            input.addEventListener('input', (e) => {
                 const index = parseInt(e.target.dataset.index);
                 staffMembers[index] = e.target.value;
-                console.log(`モバイル: 担当者${index + 1}を保存: ${e.target.value}`);
 
-                // ローカルに保存
+                // ローカルに即座保存（再描画なし）
                 localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
 
-                // 遅延して同期
-                clearTimeout(staffUpdateTimer);
-                staffUpdateTimer = setTimeout(() => {
-                    saveStaffMembers(false);
-                    renderCalendar();
-                }, 3000);
+                // 遅延してSupabase同期（再描画なし）
+                clearTimeout(mobileInputTimer);
+                mobileInputTimer = setTimeout(() => {
+                    console.log(`モバイル: 担当者${index + 1}を保存: ${e.target.value}`);
+                    // Supabaseに保存するが、再描画はしない
+                    saveStaffToSupabase();
+                }, 5000); // 5秒後にSupabase同期
             });
+
+            // blurイベント（フォーカスアウト時）
+            input.addEventListener('blur', (e) => {
+                clearTimeout(mobileInputTimer);
+                const index = parseInt(e.target.dataset.index);
+                staffMembers[index] = e.target.value;
+                localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
+
+                // 次のフォーカス先を確認
+                setTimeout(() => {
+                    const activeEl = document.activeElement;
+                    // 他の入力欄にフォーカスが移っていない場合のみカレンダー更新
+                    if (!activeEl || !activeEl.classList.contains('staff-input')) {
+                        renderCalendar();
+                    }
+                }, 100);
+            });
+
+            // フォーカス時の処理
+            input.addEventListener('focus', (e) => {
+                // ビューポートを固定
+                e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+
         } else {
             // PCではinputイベントを使用
             let inputTimer = null;
@@ -927,10 +954,7 @@ async function syncData() {
         console.error('同期エラー: Supabaseが初期化されていません');
         const syncStatus = document.getElementById('syncStatus');
         if (syncStatus) {
-            syncStatus.textContent = '同期エラー';
-            setTimeout(() => {
-                syncStatus.textContent = '';
-            }, 3000);
+            syncStatus.textContent = '';
         }
         return;
     }
@@ -949,7 +973,12 @@ async function syncData() {
 
         console.log('イベントデータ取得結果:', { eventData, eventError });
 
-        if (!eventError && eventData && eventData.length > 0) {
+        if (eventError) {
+            console.error('イベント取得エラー:', eventError);
+            if (syncStatus) {
+                syncStatus.textContent = '';
+            }
+        } else if (eventData && eventData.length > 0) {
             // Supabaseのデータを優先（完全置き換え）
             events = eventData.map(e => ({
                 id: e.event_id || e.id.toString(),
@@ -974,7 +1003,12 @@ async function syncData() {
             .eq('user_id', USER_ID)
             .order('staff_index');
 
-        if (!staffError && staffData && staffData.length > 0) {
+        if (staffError) {
+            console.error('スタッフ取得エラー:', staffError);
+            if (syncStatus) {
+                syncStatus.textContent = '';
+            }
+        } else if (staffData && staffData.length > 0) {
             const maxIndex = Math.max(...staffData.map(s => s.staff_index));
             const newStaff = new Array(Math.max(maxIndex + 1, 9)).fill('');
 
@@ -984,11 +1018,16 @@ async function syncData() {
                 }
             });
 
-            // スタッフデータを更新
+            // スタッフデータを更新（モバイルで入力中は再描画しない）
             staffMembers = newStaff;
             localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
-            renderStaffInputs();
-            renderCalendar();
+
+            // 入力中でない場合のみ再描画
+            const activeEl = document.activeElement;
+            if (!activeEl || !activeEl.classList.contains('staff-input')) {
+                renderStaffInputs();
+                renderCalendar();
+            }
         }
 
         if (syncStatus) {
@@ -1002,10 +1041,8 @@ async function syncData() {
         console.error('同期エラー:', error);
         const syncStatus = document.getElementById('syncStatus');
         if (syncStatus) {
-            syncStatus.textContent = '同期エラー';
-            setTimeout(() => {
-                syncStatus.textContent = '';
-            }, 3000);
+            // エラー表示をクリア
+            syncStatus.textContent = '';
         }
     }
 }
