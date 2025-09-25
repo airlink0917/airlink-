@@ -388,11 +388,13 @@ main {
     -webkit-box-orient: vertical !important;
     text-overflow: clip !important;
     position: absolute;
-    top: 2px;
+    top: 50%;
     left: 2px;
     right: 2px;
+    transform: translateY(-50%);
     color: #333 !important;
     z-index: 3;
+    text-align: center !important;
 }
 
 /* 長文用の文字サイズ調整クラス */
@@ -458,6 +460,8 @@ main {
 .has-event.has-time.has-note .event-title {
     max-height: 25px !important;
     -webkit-line-clamp: 2 !important;
+    top: 8px !important;
+    transform: none !important;
 }
 
 /* 時間または備考のどちらかがある場合 */
@@ -465,6 +469,8 @@ main {
 .has-event.has-note .event-title {
     max-height: 30px !important;
     -webkit-line-clamp: 3 !important;
+    top: 12px !important;
+    transform: none !important;
 }
 
 .campaign-cell {
@@ -814,9 +820,11 @@ main {
         width: 68px !important;
         max-width: 68px !important;
         -webkit-line-clamp: 3 !important;
-        top: 1px !important;
+        top: 50% !important;
         left: 1px !important;
         right: 1px !important;
+        transform: translateY(-50%) !important;
+        text-align: center !important;
     }
 
     .event-title.long-text {
@@ -829,6 +837,18 @@ main {
         font-size: 8px !important;
         max-height: 22px !important;
         -webkit-line-clamp: 4 !important;
+    }
+
+    /* モバイルで時間・備考ありの場合 */
+    .has-event.has-time .event-title,
+    .has-event.has-note .event-title {
+        top: 8px !important;
+        transform: none !important;
+    }
+
+    .has-event.has-time.has-note .event-title {
+        top: 6px !important;
+        transform: none !important;
     }
 
     .event-time {
