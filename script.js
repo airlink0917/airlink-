@@ -124,7 +124,13 @@ function setupEventListeners() {
     });
 
     // 担当者追加ボタン
-    document.getElementById('addStaff').addEventListener('click', addStaff);
+    const addBtn = document.getElementById('addStaff');
+    if (addBtn) {
+        addBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            addStaff();
+        });
+    }
 
     // 特拡登録ボタン
     document.getElementById('showCampaignForm').addEventListener('click', () => {
@@ -145,170 +151,154 @@ function setupEventListeners() {
 }
 
 // ===================================
-// スタッフ管理
+// スタッフ管理（完全書き直し版）
 // ===================================
+let staffUpdateTimer = null;
+
 function renderStaffInputs() {
     const container = document.getElementById('staffInputs');
-    container.innerHTML = '';
+    if (!container) return;
 
-    // デフォルト9人、最大20人
+    // デフォルト9人
     if (staffMembers.length === 0) {
         staffMembers = new Array(9).fill('');
     }
 
+    // HTMLを構築
+    let html = '';
     staffMembers.forEach((name, index) => {
-        const div = document.createElement('div');
-        div.className = 'staff-input-group';
-        div.innerHTML = `
-            <input type="text"
-                   class="staff-input"
-                   placeholder="担当者${index + 1}"
-                   value="${name}"
-                   data-index="${index}">
-            ${staffMembers.length > 1 ? `
-                <button class="btn-delete-staff" data-index="${index}">×</button>
-            ` : ''}
+        html += `
+            <div class="staff-input-group">
+                <input type="text"
+                       class="staff-input"
+                       placeholder="担当者${index + 1}"
+                       value="${name || ''}"
+                       data-index="${index}"
+                       id="staff-${index}">
+                ${staffMembers.length > 1 ? `
+                    <button type="button" class="btn-delete-staff" data-index="${index}">×</button>
+                ` : ''}
+            </div>
         `;
-        container.appendChild(div);
     });
+    container.innerHTML = html;
 
-    // イベントリスナー設定
-    container.querySelectorAll('.staff-input').forEach(input => {
-        // デバウンス処理用のタイマー
-        let debounceTimer;
-        let isComposing = false; // IME入力中かどうかのフラグ
+    // イベントリスナーを設定
+    attachStaffInputListeners();
+}
 
-        // モバイル用: タッチイベントでフォーカスを維持
+function attachStaffInputListeners() {
+    const inputs = document.querySelectorAll('.staff-input');
+    const deleteButtons = document.querySelectorAll('.btn-delete-staff');
+
+    // 入力欄のイベント
+    inputs.forEach(input => {
+        // モバイルではchangeイベントのみ使用
         if (isMobileDevice()) {
-            input.addEventListener('touchstart', (e) => {
-                e.stopPropagation();
-            });
-        }
+            // changeイベント（入力完了・フォーカスアウト時）
+            input.addEventListener('change', (e) => {
+                const index = parseInt(e.target.dataset.index);
+                staffMembers[index] = e.target.value;
+                console.log(`モバイル: 担当者${index + 1}を保存: ${e.target.value}`);
 
-        // IME入力開始・終了のイベントをキャッチ
-        input.addEventListener('compositionstart', () => {
-            isComposing = true;
-        });
+                // ローカルに保存
+                localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
 
-        input.addEventListener('compositionend', () => {
-            isComposing = false;
-            const index = parseInt(input.dataset.index);
-            staffMembers[index] = input.value;
-            console.log(`担当者${index + 1}を更新(変換終了): ${input.value}`);
-        });
-
-        // リアルタイム入力のためにinputイベントを使用（デバウンス付き）
-        input.addEventListener('input', (e) => {
-            // IME入力中は何もしない
-            if (isComposing) return;
-
-            const index = parseInt(e.target.dataset.index);
-            staffMembers[index] = e.target.value;
-            console.log(`担当者${index + 1}を更新: ${e.target.value}`);
-
-            // デバウンス処理：入力が止まってから保存
-            clearTimeout(debounceTimer);
-            const delay = isMobileDevice() ? 3000 : 500;
-            debounceTimer = setTimeout(() => {
-                // モバイルの場合はローカル保存のみ（Supabase同期をスキップ）
-                saveStaffMembers(isMobileDevice());
-                // モバイルではカレンダー再描画をしない
-                if (!isMobileDevice()) {
-                    // PCのみ、フォーカスが外れている場合にカレンダー更新
-                    if (document.activeElement !== e.target) {
-                        renderCalendar();
-                    }
-                }
-            }, delay);
-        });
-
-        // フォーカスアウト時に保存とカレンダー更新
-        input.addEventListener('blur', (e) => {
-            const index = parseInt(e.target.dataset.index);
-            staffMembers[index] = e.target.value;
-            clearTimeout(debounceTimer);
-
-            // 次のフォーカス先を確認
-            setTimeout(() => {
-                const nextFocused = document.activeElement;
-                const isStaffInput = nextFocused && nextFocused.classList.contains('staff-input');
-
-                if (isStaffInput) {
-                    // 他のstaff-inputにフォーカスが移った場合はローカル保存のみ
-                    localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
-                } else {
-                    // 完全にフォーカスが外れた場合のみSupabase同期とカレンダー更新
+                // 遅延して同期
+                clearTimeout(staffUpdateTimer);
+                staffUpdateTimer = setTimeout(() => {
                     saveStaffMembers(false);
-                    // モバイルの場合は遅延を長くする
-                    const updateDelay = isMobileDevice() ? 2000 : 100;
-                    setTimeout(() => {
-                        renderCalendar();
-                    }, updateDelay);
-                }
-            }, 10);
-        });
+                    renderCalendar();
+                }, 3000);
+            });
+        } else {
+            // PCではinputイベントを使用
+            let inputTimer = null;
+            input.addEventListener('input', (e) => {
+                const index = parseInt(e.target.dataset.index);
+                staffMembers[index] = e.target.value;
 
-        // モバイル用: フォーカス時にスクロールを無効化
-        if (isMobileDevice()) {
-            input.addEventListener('focus', (e) => {
-                // 入力欄にフォーカスしたときにスクロールを防ぐ
-                const scrollWrapper = document.querySelector('.calendar-scroll-wrapper');
-                if (scrollWrapper) {
-                    const currentScroll = scrollWrapper.scrollTop;
-                    setTimeout(() => {
-                        scrollWrapper.scrollTop = currentScroll;
-                    }, 0);
-                }
+                clearTimeout(inputTimer);
+                inputTimer = setTimeout(() => {
+                    console.log(`PC: 担当者${index + 1}を保存: ${e.target.value}`);
+                    saveStaffMembers(false);
+                    renderCalendar();
+                }, 500);
             });
         }
     });
 
-    container.querySelectorAll('.btn-delete-staff').forEach(btn => {
+    // 削除ボタンのイベント
+    deleteButtons.forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const index = parseInt(e.target.dataset.index);
-            removeStaff(index);
+            e.preventDefault();
+            e.stopPropagation();
+            const index = parseInt(btn.dataset.index);
+            if (confirm(`担当者${index + 1}を削除しますか？`)) {
+                removeStaff(index);
+            }
         });
     });
 }
 
 function addStaff() {
-    if (staffMembers.length < 20) {
-        staffMembers.push('');
-        console.log('担当者を追加しました。現在の人数:', staffMembers.length);
-        saveStaffMembers();
-        renderStaffInputs();
-        renderCalendar();
-
-        // 追加された入力欄にフォーカス（モバイルは遅延を長く）
-        const focusDelay = isMobileDevice() ? 300 : 100;
-        setTimeout(() => {
-            const inputs = document.querySelectorAll('.staff-input');
-            if (inputs.length > 0) {
-                const newInput = inputs[inputs.length - 1];
-                newInput.focus();
-                // モバイルの場合、キーボードを明示的に表示
-                if (isMobileDevice()) {
-                    newInput.click();
-                }
-            }
-        }, focusDelay);
-    } else {
+    if (staffMembers.length >= 20) {
         alert('担当者は最大20人までです');
+        return;
+    }
+
+    staffMembers.push('');
+    console.log('担当者追加: 現在' + staffMembers.length + '人');
+
+    // 即座に保存
+    localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
+    if (!isMobileDevice()) {
+        saveStaffMembers(false);
+    }
+
+    // UI更新
+    renderStaffInputs();
+    renderCalendar();
+
+    // PCのみ新しい入力欄にフォーカス
+    if (!isMobileDevice()) {
+        setTimeout(() => {
+            const newInput = document.getElementById(`staff-${staffMembers.length - 1}`);
+            if (newInput) newInput.focus();
+        }, 100);
     }
 }
 
 function removeStaff(index) {
-    if (staffMembers.length > 1) {
-        if (confirm('この担当者を削除しますか？')) {
-            staffMembers.splice(index, 1);
-            // 関連するイベントも削除
-            events = events.filter(e => e.person !== `staff-${index}`);
-            saveStaffMembers();
-            saveEvents();
-            renderStaffInputs();
-            renderCalendar();
+    if (staffMembers.length <= 1) return;
+
+    // 削除
+    staffMembers.splice(index, 1);
+
+    // 関連イベントを削除・調整
+    events = events.filter(e => {
+        const staffIdx = parseInt(e.person?.replace('staff-', '') || -1);
+        if (staffIdx === index) return false;
+        if (staffIdx > index) {
+            e.person = `staff-${staffIdx - 1}`;
         }
+        return true;
+    });
+
+    // 保存
+    localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
+    localStorage.setItem('scheduleEvents', JSON.stringify(events));
+
+    if (!isMobileDevice()) {
+        saveStaffMembers(false);
+        saveEvents();
     }
+
+    // UI更新
+    renderStaffInputs();
+    renderCalendar();
+
+    console.log(`担当者${index + 1}を削除しました`);
 }
 
 // ===================================
