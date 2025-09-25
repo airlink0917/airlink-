@@ -209,10 +209,16 @@ async function improvedSaveStaffToSupabase() {
 if (typeof window !== 'undefined') {
     console.log('同期機能改善パッチを適用中...');
 
-    // 既存の関数を置き換え
-    window.syncData = improvedSyncData;
-    window.saveEventToSupabase = improvedSaveEventToSupabase;
-    window.saveStaffToSupabase = improvedSaveStaffToSupabase;
+    // script.jsの関数を使用し、必要に応じてフォールバック関数として定義
+    if (typeof window.syncData !== 'function') {
+        window.syncData = improvedSyncData;
+    }
+    if (typeof window.saveEventToSupabase !== 'function') {
+        window.saveEventToSupabase = improvedSaveEventToSupabase;
+    }
+    if (typeof window.saveStaffToSupabase !== 'function') {
+        window.saveStaffToSupabase = improvedSaveStaffToSupabase;
+    }
 
     // ページ読み込み後に初期同期
     if (document.readyState === 'complete' || document.readyState === 'interactive') {

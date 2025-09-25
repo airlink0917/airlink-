@@ -29,7 +29,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('アプリケーション初期化中...');
 
     // Supabase初期化
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    try {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        console.log('Supabaseクライアント初期化成功');
+    } catch (error) {
+        console.error('Supabase初期化エラー:', error);
+        alert('Supabaseの初期化に失敗しました。ページをリロードしてください。');
+    }
 
     // 初期データ読み込み（まずLocalStorageから）
     loadStaffMembers();
@@ -563,47 +569,54 @@ function setupModalListeners() {
 
         const date = document.getElementById('campaignDate').value;
 
-        if (window.editingCampaignId) {
-            // 編集モード
-            const index = events.findIndex(e => e.id === window.editingCampaignId);
-            if (index !== -1) {
-                events[index] = {
-                    ...events[index],
+        try {
+            if (window.editingCampaignId) {
+                // 編集モード
+                const index = events.findIndex(e => e.id === window.editingCampaignId);
+                if (index !== -1) {
+                    events[index] = {
+                        ...events[index],
+                        date: date,
+                        color: document.getElementById('campaignType').value,
+                        campaignMembers: members,
+                        note: document.getElementById('campaignNote').value || ''
+                    };
+                    await updateEventInSupabase(events[index]);
+                }
+                window.editingCampaignId = null;
+            } else {
+                // 新規作成モード
+                const campaignData = {
+                    id: 'campaign_' + Date.now().toString(),
                     date: date,
-                    color: document.getElementById('campaignType').value,
+                    title: '特拡',
+                    color: document.getElementById('campaignType').value || '',
                     campaignMembers: members,
-                    note: document.getElementById('campaignNote').value
+                    note: document.getElementById('campaignNote').value || '',
+                    isCampaign: true,
+                    person: 'campaign'
                 };
-                await updateEventInSupabase(events[index]);
+
+                console.log('特拡データ保存:', campaignData);
+
+                // 既存の特拡を削除
+                events = events.filter(e => !(e.date === date && e.isCampaign));
+
+                events.push(campaignData);
+                await saveEventToSupabase(campaignData);
             }
-            window.editingCampaignId = null;
-        } else {
-            // 新規作成モード
-            const campaignData = {
-                id: 'campaign_' + Date.now().toString(),
-                date: date,
-                title: '特拡',
-                color: document.getElementById('campaignType').value,
-                campaignMembers: members,
-                note: document.getElementById('campaignNote').value,
-                isCampaign: true,
-                person: 'campaign'
-            };
 
-            // 既存の特拡を削除
-            events = events.filter(e => !(e.date === date && e.isCampaign));
+            saveEvents();
+            renderCalendar();
 
-            events.push(campaignData);
-            await saveEventToSupabase(campaignData);
+            // フォームをリセット
+            document.getElementById('campaignForm').reset();
+            document.getElementById('otherMemberName').style.display = 'none';
+            document.getElementById('campaignModal').style.display = 'none';
+        } catch (error) {
+            console.error('特拡保存エラー:', error);
+            alert('特拡データの保存に失敗しました。もう一度お試しください。');
         }
-
-        saveEvents();
-        renderCalendar();
-
-        // フォームをリセット
-        document.getElementById('campaignForm').reset();
-        document.getElementById('otherMemberName').style.display = 'none';
-        document.getElementById('campaignModal').style.display = 'none';
     });
 
     // その他チェックボックスの処理
@@ -675,15 +688,24 @@ function loadStaffMembers() {
 // Supabase同期
 // ===================================
 async function syncData() {
+    if (!supabase) {
+        console.error('同期エラー: Supabaseが初期化されていません');
+        return;
+    }
+
     try {
         const syncStatus = document.getElementById('syncStatus');
         if (syncStatus) syncStatus.textContent = '同期中...';
+
+        console.log('Supabase同期開始 - USER_ID:', USER_ID);
 
         // イベントデータを取得
         const { data: eventData, error: eventError } = await supabase
             .from('schedule_events')
             .select('*')
             .eq('user_id', USER_ID);
+
+        console.log('イベントデータ取得結果:', { eventData, eventError });
 
         if (!eventError && eventData && eventData.length > 0) {
             // Supabaseのデータを優先（完全置き換え）
@@ -741,13 +763,17 @@ async function syncData() {
 }
 
 async function saveEventToSupabase(event) {
-    if (!supabase) return;
+    if (!supabase) {
+        console.error('Supabaseが初期化されていません');
+        alert('データベース接続エラーです。ページをリロードしてください。');
+        return;
+    }
 
     try {
         const eventData = {
             user_id: USER_ID,
             event_id: event.id,
-            title: event.title,
+            title: event.title || '',
             date: event.date,
             time: event.time || null,
             person: event.person || null,
@@ -757,29 +783,56 @@ async function saveEventToSupabase(event) {
             campaign_members: event.campaignMembers || []
         };
 
-        await supabase
+        console.log('保存データ:', eventData);
+
+        const { data, error } = await supabase
             .from('schedule_events')
             .upsert(eventData, { onConflict: 'event_id,user_id' });
 
+        if (error) {
+            console.error('Supabase保存エラー:', error);
+            alert(`データ保存に失敗しました: ${error.message}`);
+            throw error;
+        } else {
+            console.log('保存成功:', data);
+            // 保存後すぐに同期
+            setTimeout(() => syncData(), 500);
+        }
+
     } catch (error) {
         console.error('イベント保存エラー:', error);
+        alert('データ保存に失敗しました。もう一度お試しください。');
     }
 }
 
 async function updateEventInSupabase(event) {
-    if (!supabase) return;
+    if (!supabase) {
+        console.error('Supabaseが初期化されていません');
+        return;
+    }
 
     try {
-        await supabase
+        const { data, error } = await supabase
             .from('schedule_events')
             .update({
-                title: event.title,
-                time: event.time,
-                color: event.color,
-                note: event.note
+                title: event.title || '',
+                time: event.time || null,
+                color: event.color || null,
+                note: event.note || null,
+                person: event.person || null,
+                is_campaign: event.isCampaign || false,
+                campaign_members: event.campaignMembers || []
             })
             .eq('event_id', event.id)
             .eq('user_id', USER_ID);
+
+        if (error) {
+            console.error('Supabase更新エラー:', error);
+            alert(`データ更新に失敗しました: ${error.message}`);
+        } else {
+            console.log('更新成功:', data);
+            setTimeout(() => syncData(), 500);
+        }
 
     } catch (error) {
         console.error('イベント更新エラー:', error);
@@ -790,11 +843,19 @@ async function deleteEventFromSupabase(eventId) {
     if (!supabase) return;
 
     try {
-        await supabase
+        const { data, error } = await supabase
             .from('schedule_events')
             .delete()
             .eq('event_id', eventId)
             .eq('user_id', USER_ID);
+
+        if (error) {
+            console.error('Supabase削除エラー:', error);
+            alert(`データ削除に失敗しました: ${error.message}`);
+        } else {
+            console.log('削除成功:', data);
+            setTimeout(() => syncData(), 500);
+        }
 
     } catch (error) {
         console.error('イベント削除エラー:', error);
@@ -806,10 +867,15 @@ async function saveStaffToSupabase() {
 
     try {
         // 既存データを削除
-        await supabase
+        const { error: deleteError } = await supabase
             .from('staff_members')
             .delete()
             .eq('user_id', USER_ID);
+
+        if (deleteError) {
+            console.error('スタッフ削除エラー:', deleteError);
+            return;
+        }
 
         // 新規データを挿入
         const staffData = staffMembers.map((name, index) => ({
@@ -818,9 +884,16 @@ async function saveStaffToSupabase() {
             name: name || ''
         }));
 
-        await supabase
+        const { data, error: insertError } = await supabase
             .from('staff_members')
             .insert(staffData);
+
+        if (insertError) {
+            console.error('スタッフ挿入エラー:', insertError);
+        } else {
+            console.log('スタッフ保存成功:', data);
+            setTimeout(() => syncData(), 500);
+        }
 
     } catch (error) {
         console.error('スタッフ保存エラー:', error);
