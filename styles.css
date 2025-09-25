@@ -199,7 +199,8 @@ main {
 }
 
 .calendar-header {
-    display: flex;
+    display: grid;
+    grid-template-columns: 80px repeat(var(--staff-count, 9), 1fr);
 }
 
 .calendar-row {
@@ -208,13 +209,16 @@ main {
 }
 
 .calendar-cell {
-    flex: 1;
     min-width: 100px;
     padding: 8px;
     border-right: 1px solid #e0e0e0;
     border-bottom: 1px solid #e0e0e0;
     text-align: center;
     font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
 .calendar-cell:last-child {
@@ -575,14 +579,51 @@ main {
         width: 100px;
     }
 
-    .calendar-cell {
-        min-width: 80px;
+    /* モバイル用カレンダー調整 */
+    .calendar-grid {
         font-size: 10px;
-        padding: 5px;
+    }
+
+    .calendar-header {
+        grid-template-columns: 60px repeat(var(--staff-count, 9), minmax(60px, 1fr));
+    }
+
+    .calendar-row {
+        grid-template-columns: 60px repeat(var(--staff-count, 9), minmax(60px, 1fr));
+    }
+
+    .calendar-cell {
+        min-width: 60px;
+        font-size: 9px;
+        padding: 4px 2px;
+        line-height: 1.2;
     }
 
     .date-cell {
         min-width: 60px;
+        font-size: 8px;
+        padding: 4px 2px;
+    }
+
+    .header-cell {
+        font-size: 9px;
+        padding: 6px 2px;
+    }
+
+    .event-cell {
+        min-height: 40px;
+    }
+
+    .event-title {
+        font-size: 8px;
+    }
+
+    .event-time {
+        font-size: 7px;
+    }
+
+    .event-note {
+        font-size: 7px;
     }
 
     .modal-content {

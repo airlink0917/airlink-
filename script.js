@@ -430,6 +430,15 @@ function createEvent(date, staffIndex) {
     editingEventId = null;
     document.getElementById('eventDate').value = date;
     document.getElementById('eventPerson').value = `staff-${staffIndex}`;
+
+    // 日付を表示用にフォーマット
+    const dateObj = new Date(date + 'T00:00:00');
+    const month = dateObj.getMonth() + 1;
+    const day = dateObj.getDate();
+    const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+    const dayName = dayNames[dateObj.getDay()];
+    document.getElementById('eventDateDisplay').value = `${month}月${day}日(${dayName})`;
+
     document.getElementById('eventTitle').value = '';
     document.getElementById('eventTime').value = '';
     document.getElementById('eventColor').value = '';
@@ -445,6 +454,15 @@ function editEvent(eventId) {
     editingEventId = eventId;
     document.getElementById('eventDate').value = event.date;
     document.getElementById('eventPerson').value = event.person;
+
+    // 日付を表示用にフォーマット
+    const dateObj = new Date(event.date + 'T00:00:00');
+    const month = dateObj.getMonth() + 1;
+    const day = dateObj.getDate();
+    const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+    const dayName = dayNames[dateObj.getDay()];
+    document.getElementById('eventDateDisplay').value = `${month}月${day}日(${dayName})`;
+
     document.getElementById('eventTitle').value = event.title;
     document.getElementById('eventTime').value = event.time || '';
     document.getElementById('eventColor').value = event.color || '';
