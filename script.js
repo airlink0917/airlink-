@@ -78,6 +78,25 @@ function initializeUI() {
         if (viewport) {
             viewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
         }
+
+        // モバイル用スクロール改善
+        document.addEventListener('touchstart', function() {}, { passive: true });
+        document.addEventListener('touchmove', function(e) {
+            // カレンダー内での縦スクロールを防止
+            const calendarWrapper = document.querySelector('.calendar-scroll-wrapper');
+            if (calendarWrapper && calendarWrapper.contains(e.target)) {
+                // 横スクロールのみ許可
+                const touch = e.touches[0];
+                const startTouch = e.target.touchStartCoords;
+                if (startTouch) {
+                    const deltaX = Math.abs(touch.clientX - startTouch.x);
+                    const deltaY = Math.abs(touch.clientY - startTouch.y);
+                    if (deltaY > deltaX) {
+                        e.preventDefault();
+                    }
+                }
+            }
+        }, { passive: false });
     }
 
     // カレンダー生成
@@ -369,48 +388,100 @@ function renderCalendar() {
     setupCalendarEventHandlers();
 }
 
+// タッチ操作とスクロールの状態管理
+let isScrolling = false;
+let touchStartX = 0;
+let touchStartY = 0;
+let touchStartTime = 0;
+
 // カレンダーのイベントハンドラー設定
 function setupCalendarEventHandlers() {
+    const scrollWrapper = document.querySelector('.calendar-scroll-wrapper');
+
+    // スクロール検出
+    if (scrollWrapper) {
+        scrollWrapper.addEventListener('scroll', () => {
+            isScrolling = true;
+            clearTimeout(window.scrollTimeout);
+            window.scrollTimeout = setTimeout(() => {
+                isScrolling = false;
+            }, 150);
+        });
+    }
+
     // キャンペーンセルのハンドラー
     document.querySelectorAll('.campaign-cell-wide[data-campaign-id]').forEach(cell => {
         const campaignId = cell.dataset.campaignId;
-        const handleInteraction = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            window.editCampaign(campaignId);
-        };
-
-        // モバイル用タッチイベント
-        cell.addEventListener('touchend', handleInteraction, { passive: false });
-        // デスクトップ用クリックイベント
-        cell.addEventListener('click', handleInteraction);
+        setupCellInteraction(cell, () => window.editCampaign(campaignId));
     });
 
     // 既存イベントセルのハンドラー
     document.querySelectorAll('.has-event[data-event-id]').forEach(cell => {
         const eventId = cell.dataset.eventId;
-        const handleInteraction = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            window.editEvent(eventId);
-        };
-
-        cell.addEventListener('touchend', handleInteraction, { passive: false });
-        cell.addEventListener('click', handleInteraction);
+        setupCellInteraction(cell, () => window.editEvent(eventId));
     });
 
     // 空のセルのハンドラー
     document.querySelectorAll('.empty-cell[data-date][data-person-index]').forEach(cell => {
         const date = cell.dataset.date;
         const personIndex = parseInt(cell.dataset.personIndex);
-        const handleInteraction = (e) => {
+        setupCellInteraction(cell, () => window.createEvent(date, personIndex));
+    });
+}
+
+// セルのインタラクション設定（スクロール対応）
+function setupCellInteraction(cell, action) {
+    // タッチ開始
+    cell.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        touchStartTime = Date.now();
+    }, { passive: true });
+
+    // タッチ移動
+    cell.addEventListener('touchmove', (e) => {
+        // タッチ移動があった場合はスクロール中と判定
+        const touchX = e.touches[0].clientX;
+        const touchY = e.touches[0].clientY;
+        const deltaX = Math.abs(touchX - touchStartX);
+        const deltaY = Math.abs(touchY - touchStartY);
+
+        if (deltaX > 10 || deltaY > 10) {
+            isScrolling = true;
+        }
+    }, { passive: true });
+
+    // タッチ終了
+    cell.addEventListener('touchend', (e) => {
+        e.preventDefault();
+
+        const touchEndTime = Date.now();
+        const touchDuration = touchEndTime - touchStartTime;
+
+        // スクロール中または長時間のタッチの場合は処理しない
+        if (isScrolling || touchDuration > 500) {
+            return;
+        }
+
+        // 短時間のタップのみ処理
+        setTimeout(() => {
+            if (!isScrolling) {
+                console.log('タップ処理実行: duration=', touchDuration, 'ms');
+                action();
+            } else {
+                console.log('スクロール中のためタップをキャンセル');
+            }
+        }, 50);
+    }, { passive: false });
+
+    // デスクトップ用クリックイベント
+    cell.addEventListener('click', (e) => {
+        // モバイルではない場合のみ処理
+        if (!isMobileDevice()) {
             e.preventDefault();
             e.stopPropagation();
-            window.createEvent(date, personIndex);
-        };
-
-        cell.addEventListener('touchend', handleInteraction, { passive: false });
-        cell.addEventListener('click', handleInteraction);
+            action();
+        }
     });
 }
 

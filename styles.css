@@ -200,6 +200,9 @@ main {
     /* スクロールバーのスタイリング */
     scrollbar-width: thin;
     scrollbar-color: #ccc #f9f9f9;
+    /* モバイルスクロールの最適化 */
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
 }
 
 /* Webkitブラウザ用スクロールバー */
@@ -325,6 +328,11 @@ main {
     flex-direction: column;
     justify-content: center;
     transition: all 0.3s;
+    /* タッチ操作の最適化 */
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .empty-cell:hover {
