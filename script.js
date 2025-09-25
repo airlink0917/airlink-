@@ -337,6 +337,10 @@ function renderCalendar() {
             };
             const campaignTypeName = campaignTypeNames[isCampaign.color] || '特拡';
 
+            // メンバー名の長さで文字サイズ調整
+            const memberText = isCampaign.campaignMembers?.join('、') || '';
+            const memberClass = memberText.length > 20 ? 'campaign-members long-members' : 'campaign-members';
+
             // 特拡の日は全体で1枠として表示（クリックで編集可能）
             html += `
                 <div class="calendar-cell event-cell campaign-cell-wide"
@@ -344,7 +348,7 @@ function renderCalendar() {
                      data-campaign-id="${isCampaign.id}">
                     <div class="campaign-info">
                         <div class="campaign-type">${campaignTypeName}</div>
-                        <div class="campaign-members">${isCampaign.campaignMembers?.join('、') || ''}</div>
+                        <div class="${memberClass}">${memberText}</div>
                         ${isCampaign.note ? `<div class="campaign-note">${isCampaign.note}</div>` : ''}
                     </div>
                 </div>
@@ -355,12 +359,21 @@ function renderCalendar() {
                 const event = events.find(e => e.date === date && e.person === `staff-${index}`);
 
                 if (event) {
+                    // 文字数によるサイズ調整クラスを決定
+                    const titleLength = event.title ? event.title.length : 0;
+                    let titleClass = 'event-title';
+                    if (titleLength > 15) {
+                        titleClass += ' very-long-text';
+                    } else if (titleLength > 8) {
+                        titleClass += ' long-text';
+                    }
+
                     // 通常のイベント
                     html += `
                         <div class="calendar-cell event-cell has-event"
                              style="background-color: ${event.color || 'transparent'};"
                              data-event-id="${event.id}">
-                            <div class="event-title">${event.title}</div>
+                            <div class="${titleClass}">${event.title}</div>
                             ${event.time ? `<div class="event-time">${event.time}</div>` : ''}
                             ${event.note ? `<div class="event-note">${event.note}</div>` : ''}
                         </div>
