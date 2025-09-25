@@ -174,21 +174,83 @@ function renderStaffInputs() {
 
     // イベントリスナー設定
     container.querySelectorAll('.staff-input').forEach(input => {
-        // リアルタイム入力のためにinputイベントを使用
+        // デバウンス処理用のタイマー
+        let debounceTimer;
+        let isComposing = false; // IME入力中かどうかのフラグ
+
+        // モバイル用: タッチイベントでフォーカスを維持
+        if (isMobileDevice()) {
+            input.addEventListener('touchstart', (e) => {
+                e.stopPropagation();
+            });
+        }
+
+        // IME入力開始・終了のイベントをキャッチ
+        input.addEventListener('compositionstart', () => {
+            isComposing = true;
+        });
+
+        input.addEventListener('compositionend', () => {
+            isComposing = false;
+            const index = parseInt(input.dataset.index);
+            staffMembers[index] = input.value;
+            console.log(`担当者${index + 1}を更新(変換終了): ${input.value}`);
+        });
+
+        // リアルタイム入力のためにinputイベントを使用（デバウンス付き）
         input.addEventListener('input', (e) => {
+            // IME入力中は何もしない
+            if (isComposing) return;
+
             const index = parseInt(e.target.dataset.index);
             staffMembers[index] = e.target.value;
             console.log(`担当者${index + 1}を更新: ${e.target.value}`);
-            saveStaffMembers();
-            renderCalendar();
+
+            // デバウンス処理：入力が止まってから1500ms後に保存（モバイルは遅延を長く）
+            clearTimeout(debounceTimer);
+            const delay = isMobileDevice() ? 2000 : 500;
+            debounceTimer = setTimeout(() => {
+                saveStaffMembers();
+                // モバイルではカレンダー再描画をさらに避ける
+                if (!isMobileDevice()) {
+                    // PCのみ、フォーカスが外れている場合にカレンダー更新
+                    if (document.activeElement !== e.target) {
+                        renderCalendar();
+                    }
+                }
+            }, delay);
         });
 
-        // フォーカスアウト時にも保存
+        // フォーカスアウト時に保存とカレンダー更新
         input.addEventListener('blur', (e) => {
             const index = parseInt(e.target.dataset.index);
             staffMembers[index] = e.target.value;
+            clearTimeout(debounceTimer);
             saveStaffMembers();
+
+            // モバイルの場合は少し遅延させてからカレンダーを更新
+            const updateDelay = isMobileDevice() ? 1000 : 100;
+            setTimeout(() => {
+                // 他のstaff-inputにフォーカスが移っていない場合のみ更新
+                if (!document.activeElement || !document.activeElement.classList.contains('staff-input')) {
+                    renderCalendar();
+                }
+            }, updateDelay);
         });
+
+        // モバイル用: フォーカス時にスクロールを無効化
+        if (isMobileDevice()) {
+            input.addEventListener('focus', (e) => {
+                // 入力欄にフォーカスしたときにスクロールを防ぐ
+                const scrollWrapper = document.querySelector('.calendar-scroll-wrapper');
+                if (scrollWrapper) {
+                    const currentScroll = scrollWrapper.scrollTop;
+                    setTimeout(() => {
+                        scrollWrapper.scrollTop = currentScroll;
+                    }, 0);
+                }
+            });
+        }
     });
 
     container.querySelectorAll('.btn-delete-staff').forEach(btn => {
@@ -207,13 +269,19 @@ function addStaff() {
         renderStaffInputs();
         renderCalendar();
 
-        // 追加された入力欄にフォーカス
+        // 追加された入力欄にフォーカス（モバイルは遅延を長く）
+        const focusDelay = isMobileDevice() ? 300 : 100;
         setTimeout(() => {
             const inputs = document.querySelectorAll('.staff-input');
             if (inputs.length > 0) {
-                inputs[inputs.length - 1].focus();
+                const newInput = inputs[inputs.length - 1];
+                newInput.focus();
+                // モバイルの場合、キーボードを明示的に表示
+                if (isMobileDevice()) {
+                    newInput.click();
+                }
             }
-        }, 100);
+        }, focusDelay);
     } else {
         alert('担当者は最大20人までです');
     }

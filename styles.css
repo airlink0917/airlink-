@@ -118,11 +118,26 @@ main {
     border-radius: 5px;
     font-size: 14px;
     transition: border-color 0.3s;
+    /* モバイル用の最適化 */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    /* タッチデバイス用の最適化 */
+    touch-action: manipulation;
 }
 
 .staff-input:focus {
     outline: none;
     border-color: #667eea;
+    /* モバイルでのズーム防止 */
+    font-size: 16px;
+}
+
+/* モバイルでの入力時のフォーカス維持 */
+@supports (-webkit-touch-callout: none) {
+    .staff-input {
+        font-size: 16px; /* iOS Safari でのズーム防止 */
+    }
 }
 
 .btn-delete-staff {
@@ -759,6 +774,9 @@ main {
 
     .staff-input {
         width: 100px;
+        font-size: 16px !important; /* iOSでのズーム防止 */
+        padding: 10px;
+        min-height: 44px; /* タッチターゲットの最小サイズ */
     }
 
     /* モバイル用カレンダー調整 */
@@ -904,6 +922,12 @@ main {
 
     .staff-input {
         width: 100%;
+        font-size: 16px !important; /* iOSでのズーム防止 */
+        padding: 12px;
+        min-height: 48px; /* タッチターゲットの最小サイズ */
+        /* スクロール時の誤タップ防止 */
+        -webkit-user-select: text;
+        user-select: text;
     }
 
     .calendar-cell {
