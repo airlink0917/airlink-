@@ -5,6 +5,12 @@
 // デバッグモードを有効化
 const DEBUG_MODE = true;
 
+// モバイルデバイス検出
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+           (window.innerWidth <= 768);
+}
+
 // 元のsyncData関数を改善
 async function improvedSyncData() {
     if (DEBUG_MODE) console.log('同期処理開始...');
@@ -142,8 +148,9 @@ async function improvedSaveEventToSupabase(event) {
             alert('データ保存に失敗しました。もう一度お試しください。');
         } else {
             if (DEBUG_MODE) console.log('イベント保存成功:', data);
-            // 保存後すぐに同期
-            setTimeout(() => improvedSyncData(), 500);
+            // 保存後すぐに同期（モバイルは少し遅らせる）
+            const syncDelay = isMobileDevice() ? 1000 : 500;
+            setTimeout(() => improvedSyncData(), syncDelay);
         }
 
     } catch (error) {
@@ -188,8 +195,9 @@ async function improvedSaveStaffToSupabase() {
             console.error('スタッフ保存エラー:', error);
         } else {
             if (DEBUG_MODE) console.log('スタッフ保存成功:', data);
-            // 保存後すぐに同期
-            setTimeout(() => improvedSyncData(), 500);
+            // 保存後すぐに同期（モバイルは少し遅らせる）
+            const syncDelay = isMobileDevice() ? 1000 : 500;
+            setTimeout(() => improvedSyncData(), syncDelay);
         }
 
     } catch (error) {
@@ -216,6 +224,24 @@ if (typeof window !== 'undefined') {
             setTimeout(() => {
                 improvedSyncData();
             }, 1000);
+        });
+    }
+
+    // モバイル用の追加設定
+    if (isMobileDevice()) {
+        // タッチイベントの最適化
+        document.addEventListener('touchstart', function() {}, { passive: true });
+
+        // フォーカス時に同期
+        document.addEventListener('focus', () => {
+            if (DEBUG_MODE) console.log('フォーカスイベント検出 - 同期開始');
+            improvedSyncData();
+        }, true);
+
+        // オンライン復帰時に同期
+        window.addEventListener('online', () => {
+            if (DEBUG_MODE) console.log('オンラインに復帰 - 同期開始');
+            improvedSyncData();
         });
     }
 

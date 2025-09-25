@@ -15,6 +15,14 @@ let staffMembers = [];
 let editingEventId = null;
 
 // ===================================
+// モバイルデバイス検出
+// ===================================
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+           (window.innerWidth <= 768);
+}
+
+// ===================================
 // 初期化
 // ===================================
 document.addEventListener('DOMContentLoaded', async () => {
@@ -33,8 +41,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Supabaseから最新データを取得
     await syncData();
 
-    // 定期同期（5秒ごと）
-    setInterval(syncData, 5000);
+    // 定期同期（モバイルは10秒、デスクトップは5秒）
+    const syncInterval = isMobileDevice() ? 10000 : 5000;
+    setInterval(syncData, syncInterval);
+
+    // ページ表示時に強制同期
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            console.log('ページが表示されました。同期を開始します。');
+            syncData();
+        }
+    });
 
     console.log('初期化完了');
 });
@@ -48,6 +65,14 @@ function initializeUI() {
 
     // スタッフ入力欄生成
     renderStaffInputs();
+
+    // モバイルデバイスの場合、viewport設定
+    if (isMobileDevice()) {
+        const viewport = document.querySelector('meta[name="viewport"]');
+        if (viewport) {
+            viewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+        }
+    }
 
     // カレンダー生成
     renderCalendar();
@@ -290,7 +315,7 @@ function renderCalendar() {
             html += `
                 <div class="calendar-cell event-cell campaign-cell-wide"
                      style="background-color: ${isCampaign.color || '#E1BEE7'}; grid-column: span ${staffMembers.length}; cursor: pointer;"
-                     onclick="window.editCampaign('${isCampaign.id}')">
+                     data-campaign-id="${isCampaign.id}">
                     <div class="campaign-info">
                         <div class="campaign-type">${campaignTypeName}</div>
                         <div class="campaign-members">${isCampaign.campaignMembers?.join('、') || ''}</div>
@@ -308,7 +333,7 @@ function renderCalendar() {
                     html += `
                         <div class="calendar-cell event-cell has-event"
                              style="background-color: ${event.color || 'transparent'};"
-                             onclick="window.editEvent('${event.id}')">
+                             data-event-id="${event.id}">
                             <div class="event-title">${event.title}</div>
                             ${event.time ? `<div class="event-time">${event.time}</div>` : ''}
                             ${event.note ? `<div class="event-note">${event.note}</div>` : ''}
@@ -318,7 +343,8 @@ function renderCalendar() {
                     // 空のセル（クリックで新規作成）
                     html += `
                         <div class="calendar-cell event-cell empty-cell"
-                             onclick="window.createEvent('${date}', ${index})">
+                             data-date="${date}"
+                             data-person-index="${index}">
                         </div>
                     `;
                 }
@@ -330,6 +356,54 @@ function renderCalendar() {
 
     html += '</div>';
     container.innerHTML = html;
+
+    // タッチイベントとクリックイベントを設定
+    setupCalendarEventHandlers();
+}
+
+// カレンダーのイベントハンドラー設定
+function setupCalendarEventHandlers() {
+    // キャンペーンセルのハンドラー
+    document.querySelectorAll('.campaign-cell-wide[data-campaign-id]').forEach(cell => {
+        const campaignId = cell.dataset.campaignId;
+        const handleInteraction = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            window.editCampaign(campaignId);
+        };
+
+        // モバイル用タッチイベント
+        cell.addEventListener('touchend', handleInteraction, { passive: false });
+        // デスクトップ用クリックイベント
+        cell.addEventListener('click', handleInteraction);
+    });
+
+    // 既存イベントセルのハンドラー
+    document.querySelectorAll('.has-event[data-event-id]').forEach(cell => {
+        const eventId = cell.dataset.eventId;
+        const handleInteraction = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            window.editEvent(eventId);
+        };
+
+        cell.addEventListener('touchend', handleInteraction, { passive: false });
+        cell.addEventListener('click', handleInteraction);
+    });
+
+    // 空のセルのハンドラー
+    document.querySelectorAll('.empty-cell[data-date][data-person-index]').forEach(cell => {
+        const date = cell.dataset.date;
+        const personIndex = parseInt(cell.dataset.personIndex);
+        const handleInteraction = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            window.createEvent(date, personIndex);
+        };
+
+        cell.addEventListener('touchend', handleInteraction, { passive: false });
+        cell.addEventListener('click', handleInteraction);
+    });
 }
 
 function updateMonthDisplay() {
