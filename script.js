@@ -124,12 +124,13 @@ function setupEventListeners() {
         renderCalendar();
     });
 
-    // 担当者追加ボタン
+    // 担当者設定ボタン（モーダルを開く）
     const addBtn = document.getElementById('addStaff');
     if (addBtn) {
+        addBtn.textContent = '担当者を設定'; // ボタンテキストを変更
         addBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            addStaff();
+            openStaffModal();
         });
     }
 
@@ -152,40 +153,42 @@ function setupEventListeners() {
 }
 
 // ===================================
-// スタッフ管理（完全書き直し版）
+// スタッフ管理（新方式）
 // ===================================
+// 事前定義された担当者リスト
+const PREDEFINED_STAFF = [
+    '大西', '小林', '上田', '北野', '大浜',
+    '丹波', '良太', '永見', '富田', '渡辺', '境野'
+];
+
 let staffUpdateTimer = null;
+let tempStaffList = []; // モーダル内での一時的なリスト
 
 function renderStaffInputs() {
     const container = document.getElementById('staffInputs');
     if (!container) return;
 
-    // デフォルト9人
-    if (staffMembers.length === 0) {
-        staffMembers = new Array(9).fill('');
+    // デフォルトは空の配列
+    if (!staffMembers || staffMembers.length === 0) {
+        staffMembers = [];
     }
 
-    // HTMLを構築
+    // HTMLを構築（読み取り専用表示）
     let html = '';
-    staffMembers.forEach((name, index) => {
-        html += `
-            <div class="staff-input-group">
-                <input type="text"
-                       class="staff-input"
-                       placeholder="担当者${index + 1}"
-                       value="${name || ''}"
-                       data-index="${index}"
-                       id="staff-${index}">
-                ${staffMembers.length > 1 ? `
-                    <button type="button" class="btn-delete-staff" data-index="${index}">×</button>
-                ` : ''}
-            </div>
-        `;
-    });
+    if (staffMembers.length === 0) {
+        html = '<p style="color: #999; text-align: center;">担当者が設定されていません</p>';
+    } else {
+        staffMembers.forEach((name, index) => {
+            html += `
+                <div class="staff-input-group">
+                    <span class="staff-name" style="padding: 8px; display: inline-block;">
+                        ${name || `担当者${index + 1}`}
+                    </span>
+                </div>
+            `;
+        });
+    }
     container.innerHTML = html;
-
-    // イベントリスナーを設定
-    attachStaffInputListeners();
 }
 
 function attachStaffInputListeners() {
@@ -268,65 +271,168 @@ function attachStaffInputListeners() {
     });
 }
 
-function addStaff() {
-    if (staffMembers.length >= 20) {
-        alert('担当者は最大20人までです');
+// 担当者設定モーダルを開く
+function openStaffModal() {
+    const modal = document.getElementById('staffModal');
+    if (!modal) return;
+
+    // 一時リストを現在のリストで初期化
+    tempStaffList = [...staffMembers];
+
+    // 事前定義リストを表示
+    renderPredefinedStaffList();
+
+    // 現在の担当者リストを表示
+    renderCurrentStaffList();
+
+    // モーダルを表示
+    modal.style.display = 'block';
+
+    // イベントリスナー設定
+    setupStaffModalListeners();
+}
+
+// 事前定義スタッフリストを表示
+function renderPredefinedStaffList() {
+    const container = document.getElementById('predefinedStaffList');
+    if (!container) return;
+
+    let html = '';
+    PREDEFINED_STAFF.forEach(name => {
+        const isChecked = tempStaffList.includes(name);
+        html += `
+            <label class="staff-checkbox-item">
+                <input type="checkbox" value="${name}" ${isChecked ? 'checked' : ''}>
+                <span>${name}</span>
+            </label>
+        `;
+    });
+    container.innerHTML = html;
+
+    // チェックボックスのイベント
+    container.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+            const name = e.target.value;
+            if (e.target.checked) {
+                if (!tempStaffList.includes(name)) {
+                    tempStaffList.push(name);
+                }
+            } else {
+                const index = tempStaffList.indexOf(name);
+                if (index > -1) {
+                    tempStaffList.splice(index, 1);
+                }
+            }
+            renderCurrentStaffList();
+        });
+    });
+}
+
+// 現在の担当者リストを表示
+function renderCurrentStaffList() {
+    const container = document.getElementById('currentStaffList');
+    if (!container) return;
+
+    if (tempStaffList.length === 0) {
+        container.innerHTML = '<p style="color: #999;">担当者が選択されていません</p>';
         return;
     }
 
-    staffMembers.push('');
-    console.log('担当者追加: 現在' + staffMembers.length + '人');
+    let html = '';
+    tempStaffList.forEach((name, index) => {
+        html += `
+            <div class="current-staff-item">
+                <input type="text" value="${name}" data-index="${index}" class="staff-name-input">
+                <div class="staff-item-buttons">
+                    <button type="button" class="btn-edit-staff" data-index="${index}">更新</button>
+                    <button type="button" class="btn-remove-staff" data-index="${index}">削除</button>
+                </div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
 
-    // 即座に保存
-    localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
-    if (!isMobileDevice()) {
-        saveStaffMembers(false);
-    }
-
-    // UI更新
-    renderStaffInputs();
-    renderCalendar();
-
-    // PCのみ新しい入力欄にフォーカス
-    if (!isMobileDevice()) {
-        setTimeout(() => {
-            const newInput = document.getElementById(`staff-${staffMembers.length - 1}`);
-            if (newInput) newInput.focus();
-        }, 100);
-    }
-}
-
-function removeStaff(index) {
-    if (staffMembers.length <= 1) return;
-
-    // 削除
-    staffMembers.splice(index, 1);
-
-    // 関連イベントを削除・調整
-    events = events.filter(e => {
-        const staffIdx = parseInt(e.person?.replace('staff-', '') || -1);
-        if (staffIdx === index) return false;
-        if (staffIdx > index) {
-            e.person = `staff-${staffIdx - 1}`;
-        }
-        return true;
+    // 編集・削除ボタンのイベント
+    container.querySelectorAll('.btn-edit-staff').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const index = parseInt(e.target.dataset.index);
+            const input = e.target.parentElement.parentElement.querySelector('.staff-name-input');
+            const newName = input.value.trim();
+            if (newName) {
+                tempStaffList[index] = newName;
+                renderPredefinedStaffList();
+                renderCurrentStaffList();
+            }
+        });
     });
 
-    // 保存
-    localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
-    localStorage.setItem('scheduleEvents', JSON.stringify(events));
+    container.querySelectorAll('.btn-remove-staff').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const index = parseInt(e.target.dataset.index);
+            tempStaffList.splice(index, 1);
+            renderPredefinedStaffList();
+            renderCurrentStaffList();
+        });
+    });
+}
 
-    if (!isMobileDevice()) {
-        saveStaffMembers(false);
-        saveEvents();
+// モーダルのイベントリスナー
+function setupStaffModalListeners() {
+    const modal = document.getElementById('staffModal');
+
+    // その他チェックボックス
+    const otherCheckbox = document.getElementById('otherStaffCheckbox');
+    const otherNameInput = document.getElementById('otherStaffName');
+    const addOtherBtn = document.getElementById('addOtherStaff');
+
+    if (otherCheckbox) {
+        otherCheckbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                otherNameInput.style.display = 'inline-block';
+                addOtherBtn.style.display = 'inline-block';
+                otherNameInput.focus();
+            } else {
+                otherNameInput.style.display = 'none';
+                addOtherBtn.style.display = 'none';
+                otherNameInput.value = '';
+            }
+        });
     }
 
-    // UI更新
-    renderStaffInputs();
-    renderCalendar();
+    // その他追加ボタン
+    if (addOtherBtn) {
+        addOtherBtn.addEventListener('click', () => {
+            const name = otherNameInput.value.trim();
+            if (name && !tempStaffList.includes(name)) {
+                tempStaffList.push(name);
+                renderCurrentStaffList();
+                otherNameInput.value = '';
+            }
+        });
+    }
 
-    console.log(`担当者${index + 1}を削除しました`);
+    // 保存ボタン
+    const saveBtn = document.getElementById('saveStaffSettings');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', () => {
+            staffMembers = [...tempStaffList];
+            saveStaffMembers(false);
+            renderStaffInputs();
+            renderCalendar();
+            modal.style.display = 'none';
+        });
+    }
+
+    // 閉じるボタン
+    modal.querySelectorAll('.close, .btn-cancel').forEach(btn => {
+        btn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+    });
 }
+
+// 旧addStaff関数は不要になったため削除
+// 旧removeStaff関数もモーダル内で管理するため削除
 
 // ===================================
 // 祝日データ

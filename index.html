@@ -89,6 +89,41 @@
             </div>
         </div>
 
+        <!-- 担当者設定モーダル -->
+        <div id="staffModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h3>担当者設定</h3>
+
+                <div class="staff-select-section">
+                    <h4>担当者を選択</h4>
+                    <div id="predefinedStaffList" class="predefined-staff-list">
+                        <!-- JavaScriptで動的に生成 -->
+                    </div>
+
+                    <div class="other-staff-section">
+                        <label>
+                            <input type="checkbox" id="otherStaffCheckbox"> その他
+                        </label>
+                        <input type="text" id="otherStaffName" placeholder="名前を入力" style="display: none; margin-top: 10px; width: 200px;">
+                        <button id="addOtherStaff" style="display: none; margin-left: 10px;">追加</button>
+                    </div>
+                </div>
+
+                <div class="current-staff-section">
+                    <h4>現在の担当者</h4>
+                    <div id="currentStaffList" class="current-staff-list">
+                        <!-- JavaScriptで動的に生成 -->
+                    </div>
+                </div>
+
+                <div class="modal-buttons">
+                    <button type="button" class="btn-save" id="saveStaffSettings">保存</button>
+                    <button type="button" class="btn-cancel">閉じる</button>
+                </div>
+            </div>
+        </div>
+
         <!-- 特拡入力モーダル -->
         <div id="campaignModal" class="modal" style="display: none;">
             <div class="modal-content">

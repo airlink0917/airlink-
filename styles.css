@@ -553,6 +553,102 @@ main {
 }
 
 /* ===================================
+   担当者設定モーダル
+   =================================== */
+.predefined-staff-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.staff-checkbox-item {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    background: #f5f5f5;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.staff-checkbox-item:hover {
+    background: #e0e0e0;
+}
+
+.staff-checkbox-item input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+.other-staff-section {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.current-staff-section {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 2px solid #667eea;
+}
+
+.current-staff-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.current-staff-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    margin-bottom: 8px;
+    background: #f9f9f9;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+.current-staff-item input {
+    flex: 1;
+    margin-right: 10px;
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+
+.staff-item-buttons {
+    display: flex;
+    gap: 5px;
+}
+
+.staff-item-buttons button {
+    padding: 5px 10px;
+    font-size: 12px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-edit-staff {
+    background: #4CAF50;
+    color: white;
+}
+
+.btn-edit-staff:hover {
+    background: #45a049;
+}
+
+.btn-remove-staff {
+    background: #f44336;
+    color: white;
+}
+
+.btn-remove-staff:hover {
+    background: #da190b;
+}
+
+/* ===================================
    モーダル
    =================================== */
 .modal {
