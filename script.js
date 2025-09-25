@@ -271,7 +271,7 @@ function openStaffModal() {
     // モーダルを表示
     modal.style.display = 'block';
 
-    // イベントリスナー設定
+    // イベントリスナー設定（毎回新しく設定）
     setupStaffModalListeners();
 }
 
@@ -362,14 +362,18 @@ function renderCurrentStaffList() {
 // モーダルのイベントリスナー
 function setupStaffModalListeners() {
     const modal = document.getElementById('staffModal');
+    if (!modal) return;
 
     // その他チェックボックス
     const otherCheckbox = document.getElementById('otherStaffCheckbox');
     const otherNameInput = document.getElementById('otherStaffName');
     const addOtherBtn = document.getElementById('addOtherStaff');
 
+    // 既存のリスナーを削除してから追加
     if (otherCheckbox) {
-        otherCheckbox.addEventListener('change', (e) => {
+        const newCheckbox = otherCheckbox.cloneNode(true);
+        otherCheckbox.parentNode.replaceChild(newCheckbox, otherCheckbox);
+        newCheckbox.addEventListener('change', (e) => {
             if (e.target.checked) {
                 otherNameInput.style.display = 'inline-block';
                 addOtherBtn.style.display = 'inline-block';
@@ -384,10 +388,13 @@ function setupStaffModalListeners() {
 
     // その他追加ボタン
     if (addOtherBtn) {
-        addOtherBtn.addEventListener('click', () => {
+        const newBtn = addOtherBtn.cloneNode(true);
+        addOtherBtn.parentNode.replaceChild(newBtn, addOtherBtn);
+        newBtn.addEventListener('click', () => {
             const name = otherNameInput.value.trim();
             if (name && !tempStaffList.includes(name)) {
                 tempStaffList.push(name);
+                renderPredefinedStaffList();
                 renderCurrentStaffList();
                 otherNameInput.value = '';
             }
@@ -397,18 +404,38 @@ function setupStaffModalListeners() {
     // 保存ボタン
     const saveBtn = document.getElementById('saveStaffSettings');
     if (saveBtn) {
-        saveBtn.addEventListener('click', () => {
+        const newSaveBtn = saveBtn.cloneNode(true);
+        saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+        newSaveBtn.addEventListener('click', () => {
+            console.log('保存ボタンがクリックされました');
+            console.log('保存する担当者:', tempStaffList);
+
+            // 担当者リストを更新
             staffMembers = [...tempStaffList];
-            saveStaffMembers(false);
-            renderStaffInputs();
+
+            // ローカルストレージに保存
+            localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
+
+            // Supabaseに保存
+            if (!isMobileDevice()) {
+                saveStaffMembers(false);
+            }
+
+            // カレンダーを再描画
             renderCalendar();
+
+            // モーダルを閉じる
             modal.style.display = 'none';
+
+            console.log('担当者設定が保存されました');
         });
     }
 
     // 閉じるボタン
     modal.querySelectorAll('.close, .btn-cancel').forEach(btn => {
-        btn.addEventListener('click', () => {
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+        newBtn.addEventListener('click', () => {
             modal.style.display = 'none';
         });
     });
