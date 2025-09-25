@@ -815,6 +815,10 @@ function setupModalListeners() {
 // ===================================
 function saveEvents() {
     localStorage.setItem('scheduleEvents', JSON.stringify(events));
+    // 変更時に自動バックアップも作成
+    if (autoBackupInterval) {
+        createBackup();
+    }
 }
 
 function loadEvents() {
@@ -827,6 +831,10 @@ function loadEvents() {
 function saveStaffMembers() {
     localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
     saveStaffToSupabase();
+    // 変更時に自動バックアップも作成
+    if (autoBackupInterval) {
+        createBackup();
+    }
 }
 
 function loadStaffMembers() {
