@@ -70,8 +70,10 @@ function initializeUI() {
     // 現在月表示
     updateMonthDisplay();
 
-    // スタッフ入力欄生成
-    renderStaffInputs();
+    // スタッフ初期化（表示はしない）
+    if (!staffMembers || staffMembers.length === 0) {
+        staffMembers = [];
+    }
 
     // モバイルデバイスの場合、viewport設定
     if (isMobileDevice()) {
@@ -165,30 +167,11 @@ let staffUpdateTimer = null;
 let tempStaffList = []; // モーダル内での一時的なリスト
 
 function renderStaffInputs() {
-    const container = document.getElementById('staffInputs');
-    if (!container) return;
-
+    // 担当者名の表示を完全に削除
     // デフォルトは空の配列
     if (!staffMembers || staffMembers.length === 0) {
         staffMembers = [];
     }
-
-    // HTMLを構築（読み取り専用表示）
-    let html = '';
-    if (staffMembers.length === 0) {
-        html = '<p style="color: #999; text-align: center;">担当者が設定されていません</p>';
-    } else {
-        staffMembers.forEach((name, index) => {
-            html += `
-                <div class="staff-input-group">
-                    <span class="staff-name" style="padding: 8px; display: inline-block;">
-                        ${name || `担当者${index + 1}`}
-                    </span>
-                </div>
-            `;
-        });
-    }
-    container.innerHTML = html;
 }
 
 function attachStaffInputListeners() {
