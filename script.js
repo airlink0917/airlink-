@@ -265,11 +265,12 @@ function renderCalendar() {
     // 月の日数を取得
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-    let html = '<div class="calendar-grid">';
+    let html = '<div class="calendar-scroll-wrapper">';
+    html += '<div class="calendar-grid">';
 
     // ヘッダー行（日付と担当者名）
     html += '<div class="calendar-header">';
-    html += '<div class="calendar-cell header-cell">日付</div>';
+    html += '<div class="calendar-cell header-cell date-header">日付</div>';
     staffMembers.forEach((name, index) => {
         html += `<div class="calendar-cell header-cell">${name || `担当者${index + 1}`}</div>`;
     });
@@ -360,7 +361,8 @@ function renderCalendar() {
         html += '</div>';
     }
 
-    html += '</div>';
+    html += '</div>'; // calendar-grid を閉じる
+    html += '</div>'; // calendar-scroll-wrapper を閉じる
     container.innerHTML = html;
 
     // タッチイベントとクリックイベントを設定
