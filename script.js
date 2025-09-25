@@ -174,11 +174,20 @@ function renderStaffInputs() {
 
     // イベントリスナー設定
     container.querySelectorAll('.staff-input').forEach(input => {
-        input.addEventListener('change', (e) => {
+        // リアルタイム入力のためにinputイベントを使用
+        input.addEventListener('input', (e) => {
+            const index = parseInt(e.target.dataset.index);
+            staffMembers[index] = e.target.value;
+            console.log(`担当者${index + 1}を更新: ${e.target.value}`);
+            saveStaffMembers();
+            renderCalendar();
+        });
+
+        // フォーカスアウト時にも保存
+        input.addEventListener('blur', (e) => {
             const index = parseInt(e.target.dataset.index);
             staffMembers[index] = e.target.value;
             saveStaffMembers();
-            renderCalendar();
         });
     });
 
@@ -193,9 +202,18 @@ function renderStaffInputs() {
 function addStaff() {
     if (staffMembers.length < 20) {
         staffMembers.push('');
+        console.log('担当者を追加しました。現在の人数:', staffMembers.length);
         saveStaffMembers();
         renderStaffInputs();
         renderCalendar();
+
+        // 追加された入力欄にフォーカス
+        setTimeout(() => {
+            const inputs = document.querySelectorAll('.staff-input');
+            if (inputs.length > 0) {
+                inputs[inputs.length - 1].focus();
+            }
+        }, 100);
     } else {
         alert('担当者は最大20人までです');
     }
