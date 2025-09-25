@@ -139,9 +139,32 @@ async function improvedSaveEventToSupabase(event) {
             campaign_members: event.campaignMembers || []
         };
 
-        const { data, error } = await supabase
+        // まずデータが存在するかチェック
+        const { data: existingData } = await supabase
             .from('schedule_events')
-            .upsert(eventData, { onConflict: 'event_id,user_id' });
+            .select('id')
+            .eq('event_id', eventData.event_id)
+            .eq('user_id', eventData.user_id)
+            .single();
+
+        let data, error;
+        if (existingData) {
+            // データが存在する場合は更新
+            const result = await supabase
+                .from('schedule_events')
+                .update(eventData)
+                .eq('event_id', eventData.event_id)
+                .eq('user_id', eventData.user_id);
+            data = result.data;
+            error = result.error;
+        } else {
+            // データが存在しない場合は挿入
+            const result = await supabase
+                .from('schedule_events')
+                .insert(eventData);
+            data = result.data;
+            error = result.error;
+        }
 
         if (error) {
             console.error('イベント保存エラー:', error);
