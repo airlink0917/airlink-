@@ -1,0 +1,277 @@
+/* モバイルレスポンシブ専用CSS - 統合版 */
+
+/* スマートフォン用 (768px以下) */
+@media (max-width: 768px) {
+    /* ================================
+     * グローバル設定
+     * ================================ */
+    body {
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow-x: hidden;
+    }
+
+    .min-h-screen {
+        min-height: 100vh !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    /* ================================
+     * ヘッダー最適化
+     * ================================ */
+    header .container {
+        padding: 0.5rem !important;
+    }
+
+    header h1 {
+        font-size: 1.25rem !important;
+    }
+
+    .header-btn {
+        padding: 0.375rem 0.75rem !important;
+        font-size: 0.875rem !important;
+    }
+
+    /* ================================
+     * メインコンテンツ
+     * ================================ */
+    main.container {
+        padding: 0.5rem !important;
+    }
+
+    /* ================================
+     * カレンダーコンテナ
+     * ================================ */
+    .calendar-container {
+        padding: 3px !important;
+        max-width: 100% !important;
+    }
+
+    /* ================================
+     * スタッフヘッダー（最重要）
+     * ================================ */
+    .staff-header {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        padding: 5px !important;
+        background: #f9fafb !important;  /* bg-gray-50 */
+        margin-bottom: 5px !important;
+        border-bottom: 1px solid #e5e7eb !important;
+    }
+
+    #staffInputs,
+    .staff-inputs {
+        display: flex !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        gap: 5px !important;
+        padding: 5px !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        min-height: 40px !important;
+    }
+
+    /* 日付ヘッダーセル - 最初のセル */
+    .date-header-cell {
+        min-width: 50px !important;
+        width: 50px !important;
+        flex: 0 0 50px !important;
+        position: sticky !important;
+        left: 0 !important;
+        z-index: 20 !important;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        font-size: 11px !important;
+        font-weight: bold !important;
+        padding: 8px 4px !important;
+        text-align: center !important;
+        border-radius: 4px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    /* 各スタッフ入力セル */
+    .staff-input-cell {
+        min-width: 90px !important;
+        width: 90px !important;
+        flex: 0 0 90px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        position: relative !important;
+    }
+
+    /* スタッフ入力欄 */
+    .staff-input {
+        width: 100% !important;
+        font-size: 11px !important;
+        padding: 4px 2px !important;
+        height: 28px !important;
+        border: 1px solid #d1d5db !important;
+        border-radius: 4px !important;
+        background: white !important;
+        color: #374151 !important;
+        text-align: center !important;
+    }
+
+    /* 削除ボタン */
+    .delete-staff-btn {
+        width: 20px !important;
+        height: 20px !important;
+        font-size: 12px !important;
+        background-color: #ef4444 !important;
+        color: white !important;
+        border-radius: 50% !important;
+        margin-top: 2px !important;
+    }
+
+    /* 追加ボタン */
+    .add-staff-btn {
+        min-width: 70px !important;
+        padding: 4px 8px !important;
+        font-size: 11px !important;
+        background-color: #10b981 !important;
+        color: white !important;
+    }
+
+    /* ================================
+     * カレンダー本体
+     * ================================ */
+    .vertical-calendar {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        overflow: visible !important;
+        max-height: calc(100vh - 250px) !important;
+    }
+
+    /* カレンダーグリッドコンテナ */
+    .vertical-calendar-grid {
+        display: grid !important;
+        grid-template-columns: 50px repeat(var(--staff-count, 9), 90px) !important;
+        gap: 0 !important;
+        width: max-content !important;
+        min-width: 100% !important;
+        overflow-x: auto !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        max-height: calc(100vh - 280px) !important;
+    }
+
+    /* カレンダー行 */
+    .calendar-row {
+        display: contents !important;  /* グリッドアイテムとして振る舞う */
+    }
+
+    /* 日付セル */
+    .date-cell {
+        min-width: 50px !important;
+        width: 50px !important;
+        font-size: 11px !important;
+        font-weight: bold !important;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white !important;
+        padding: 6px 2px !important;
+        position: sticky !important;
+        left: 0 !important;
+        z-index: 10 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-bottom: 1px solid #e5e7eb !important;
+        border-right: 1px solid #e5e7eb !important;
+    }
+
+    /* イベントセル */
+    .event-cell {
+        min-width: 90px !important;
+        width: 90px !important;
+        flex: 0 0 90px !important;
+        padding: 2px !important;
+        font-size: 10px !important;
+        border-right: 1px solid #e5e7eb !important;
+        position: relative !important;
+    }
+
+    /* イベント内容 */
+    .event-content {
+        font-size: 10px !important;
+        line-height: 1.2 !important;
+    }
+
+    .event-title {
+        font-size: 10px !important;
+        font-weight: bold !important;
+    }
+
+    .event-note {
+        font-size: 9px !important;
+        opacity: 0.8 !important;
+    }
+
+    /* ================================
+     * その他の要素
+     * ================================ */
+    /* 特拡登録ボタン */
+    #showCampaignFormBtn {
+        padding: 0.5rem 1rem !important;
+        font-size: 0.875rem !important;
+    }
+
+    /* モーダル */
+    .modal-content {
+        width: 95% !important;
+        margin: 10px !important;
+        padding: 15px !important;
+    }
+}
+
+/* より小さい画面用 (480px以下) */
+@media (max-width: 480px) {
+    /* さらにコンパクトに */
+    header h1 {
+        font-size: 1.125rem !important;
+    }
+
+    .header-btn {
+        font-size: 0.75rem !important;
+        padding: 0.25rem 0.5rem !important;
+    }
+
+    /* スタッフ入力をさらに小さく */
+    .staff-input-cell {
+        min-width: 80px !important;
+        width: 80px !important;
+        flex: 0 0 80px !important;
+    }
+
+    .staff-input {
+        font-size: 10px !important;
+        padding: 3px 2px !important;
+        height: 26px !important;
+    }
+
+    /* イベントセルも合わせる */
+    .event-cell {
+        min-width: 80px !important;
+        width: 80px !important;
+        flex: 0 0 80px !important;
+    }
+
+    /* 日付セルをさらに狭く */
+    .date-cell,
+    .date-header-cell {
+        min-width: 45px !important;
+        width: 45px !important;
+        flex: 0 0 45px !important;
+        font-size: 10px !important;
+    }
+
+    /* カレンダー高さ調整 */
+    .vertical-calendar {
+        max-height: calc(100vh - 220px) !important;
+    }
+}

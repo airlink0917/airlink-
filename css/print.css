@@ -1,0 +1,422 @@
+/**
+ * 印刷用スタイル
+ */
+
+/* 印刷用スタイル */
+@media print {
+    @page {
+        size: A4 landscape;
+        margin: 5mm 10mm;
+    }
+
+    * {
+        overflow: visible !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        color-adjust: exact;
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+        font-size: 6pt;
+        overflow: visible !important;
+        background: white !important;
+    }
+
+    .container {
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+        width: 100%;
+        height: auto !important;
+        overflow: visible !important;
+        max-width: none !important;
+    }
+
+    header {
+        background: none !important;
+        color: #333 !important;
+        padding: 3px 0;
+        margin-bottom: 5px;
+        border-bottom: 1pt solid #333;
+    }
+
+    header h1 {
+        font-size: 11pt;
+        color: #333 !important;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* 印刷時は不要な要素を非表示 */
+    .no-print,
+    .nav-btn,
+    .print-btn,
+    .undo-btn,
+    .campaign-button-container,
+    .campaign-form,
+    #yearSelect,
+    .modal,
+    .notification,
+    .add-staff-btn {
+        display: none !important;
+    }
+
+    #currentMonth {
+        font-size: 10pt;
+        color: #333 !important;
+    }
+
+    .header-controls {
+        justify-content: center;
+    }
+
+    /* カレンダーのスタイル調整 */
+    .calendar-container {
+        padding: 0 !important;
+        overflow: visible !important;
+        height: auto !important;
+    }
+
+    .vertical-calendar {
+        overflow: visible !important;
+        max-height: none !important;
+        height: auto !important;
+    }
+
+    .vertical-calendar-grid {
+        page-break-inside: avoid;
+        overflow: visible !important;
+    }
+
+    /* A4横 210mm×297mm, 上下マージン5mm = 200mm有効高さ */
+    /* ヘッダー約15mm, スタッフヘッダー10mm, 31日分 = 175mm / 31 = 約5.6mm/日 */
+    .date-row {
+        page-break-inside: avoid;
+        min-height: auto;
+        height: 18px;
+        padding: 0;
+        margin: 0;
+        border-bottom: 0.5pt solid #ddd;
+        display: flex;
+        align-items: stretch;
+    }
+
+    .date-cell {
+        padding: 0 2px;
+        background: white !important;
+        color: #333 !important;
+        width: 45px;
+        min-width: 45px;
+        display: flex;
+        align-items: center;
+        font-size: 6pt;
+        border-right: 0.5pt solid #999;
+    }
+
+    .date-number {
+        font-size: 7pt;
+        font-weight: bold;
+        color: #000 !important;
+    }
+
+    .day-name {
+        font-size: 6pt;
+        font-weight: 500;
+        color: #222 !important;
+    }
+
+    .events-grid {
+        flex: 1;
+        display: flex;
+        flex-direction: row;
+        gap: 0;
+        height: 18px;
+        min-height: 18px;
+        max-height: 18px;
+        padding: 0;
+        overflow: hidden !important;
+        align-items: center;
+    }
+
+    .event-cell {
+        border-left: 0.5pt solid #ddd;
+        padding: 0 !important;
+        height: 18px;
+        min-height: 18px;
+        width: 90px;
+        min-width: 90px;
+        flex-shrink: 0;
+        font-size: 6pt;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white !important;
+    }
+
+    .event-content {
+        gap: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        text-align: center;
+    }
+
+    .event-item-plain {
+        font-size: 6pt !important;
+        font-weight: bold !important;
+        color: #000 !important;
+        line-height: 1.1;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        word-break: break-all;
+        white-space: normal;
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 18px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    .event-item-plain.text-sm {
+        font-size: 5pt !important;
+    }
+
+    .event-item-plain.text-xs {
+        font-size: 5pt !important;
+    }
+
+    .event-title-small {
+        font-size: 6pt !important;
+        font-weight: 600 !important;
+        color: #000 !important;
+        line-height: 1.1;
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 100%;
+    }
+
+    .event-note-small {
+        font-size: 5pt !important;
+        font-weight: 500 !important;
+        color: #222 !important;
+        line-height: 1;
+        display: block;
+        margin-top: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 100%;
+    }
+
+    .event-time-small {
+        font-size: 5pt !important;
+        color: #666 !important;
+        display: none; /* 時間は非表示のまま */
+    }
+
+    /* 特拡イベントの印刷スタイル */
+    .campaign-event-full {
+        border: 0.5pt solid #999;
+        padding: 0 2px !important;
+        font-size: 5pt !important;
+        height: 18px !important;
+        max-height: 18px !important;
+        width: 100%;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: center !important;
+        overflow: hidden !important;
+        line-height: 1 !important;
+        box-sizing: border-box !important;
+        gap: 2px !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    .campaign-only {
+        height: 18px !important;
+        max-height: 18px !important;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .campaign-title {
+        font-size: 6pt !important;
+        font-weight: bold !important;
+        color: #000 !important;
+        line-height: 1 !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        display: inline !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .campaign-note {
+        font-size: 5pt !important;
+        font-weight: 500 !important;
+        color: #222 !important;
+        margin-left: 2px !important;
+        display: inline !important;
+        line-height: 1 !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        max-width: 30% !important;
+        padding: 0 !important;
+    }
+
+    /* スタッフヘッダー */
+    .staff-header {
+        page-break-inside: avoid;
+        margin-bottom: 5px;
+        position: static;
+        background: white;
+        overflow: visible !important;
+    }
+
+    .staff-inputs {
+        display: flex;
+        gap: 0;
+        height: 15px;
+        padding: 0;
+        overflow: visible !important;
+    }
+
+    .staff-input {
+        border: 1pt solid #666;
+        background: white !important;
+        font-size: 7pt !important;
+        padding: 0 2px;
+        font-weight: bold;
+        color: #000 !important;
+        height: 15px;
+        line-height: 15px;
+        text-align: center;
+    }
+
+    .staff-input-cell {
+        padding: 0;
+        width: 90px;
+        min-width: 90px;
+        flex-shrink: 0;
+        height: 15px;
+    }
+
+    .date-header-cell {
+        min-width: 45px;
+        width: 45px;
+        background: white !important;
+        flex-shrink: 0;
+        height: 15px;
+    }
+
+    .staff-header-label {
+        display: block !important;
+        background: white !important;
+        color: #333 !important;
+        font-weight: bold;
+        font-size: 6pt;
+        padding: 0 2px;
+        width: 45px;
+        min-width: 45px;
+        flex-shrink: 0;
+        height: 15px;
+    }
+
+    /* 全体的な高さ調整 */
+    .main-content {
+        padding: 0 !important;
+    }
+
+    /* 週末の色 - 印刷時は非表示でスペース節約 */
+    .sunday .date-cell,
+    .saturday .date-cell {
+        background-color: white !important;
+    }
+
+    .sunday .date-number {
+        color: red !important;
+    }
+
+    .saturday .date-number {
+        color: blue !important;
+    }
+
+    /* 色を印刷時にも表示 */
+    .event-item-plain[style*="background-color"] {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    /* 削除ボタンを非表示 */
+    .delete-staff-btn {
+        display: none !important;
+    }
+
+    .add-staff-btn {
+        display: none !important;
+    }
+
+    /* スクロールバーを非表示 */
+    ::-webkit-scrollbar {
+        display: none !important;
+    }
+
+    /* イベントセルの最後のボーダーを追加 */
+    .event-cell:last-child {
+        border-right: 0.5pt solid #ddd;
+    }
+
+    /* スタッフ入力欄の最後のボーダーを追加 */
+    .staff-input-cell:last-child .staff-input {
+        border-right: 0.5pt solid #999;
+    }
+
+    /* トータルの高さ計算（改訂版）
+       ヘッダー: 約40px
+       担当者行: 20px
+       31日 x 20px = 620px
+       合計: 約680px (A4横 約190mm = 約720px)
+       ちょうど良い余白で収まる
+    */
+
+    /* 今日の強調を無効化 */
+    .today {
+        background: none !important;
+    }
+
+    /* スクロール関連を完全に無効化 */
+    html, body {
+        overflow: visible !important;
+        height: auto !important;
+    }
+
+    .vertical-calendar,
+    .calendar-container,
+    .main-content {
+        overflow: visible !important;
+        height: auto !important;
+        max-height: none !important;
+    }
+}

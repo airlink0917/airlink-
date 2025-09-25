@@ -255,22 +255,46 @@ function setupAutoSave() {
     if (typeof scheduleManager !== 'undefined') {
         const originalSaveEvents = scheduleManager.saveEvents;
         const originalSaveStaff = scheduleManager.saveStaffMembers;
+        const originalAddEvent = scheduleManager.addEvent;
+        const originalUpdateEvent = scheduleManager.updateEvent;
+        const originalDeleteEvent = scheduleManager.deleteEvent;
 
-        // イベント保存時
-        scheduleManager.saveEvents = function() {
-            originalSaveEvents.call(this);
+        // イベント追加時
+        if (originalAddEvent) {
+            scheduleManager.addEvent = function(event) {
+                const result = originalAddEvent.call(this, event);
+                if (result) {
+                    saveEventToSupabase(event);
+                }
+                return result;
+            };
+        }
 
-            // Supabaseに全イベントを保存
-            const events = this.events || [];
-            events.forEach(event => {
-                saveEventToSupabase(event);
-            });
-        };
+        // イベント更新時
+        if (originalUpdateEvent) {
+            scheduleManager.updateEvent = function(eventId, updates) {
+                const result = originalUpdateEvent.call(this, eventId, updates);
+                if (result) {
+                    const event = this.events.find(e => e.id === eventId);
+                    if (event) {
+                        saveEventToSupabase(event);
+                    }
+                }
+                return result;
+            };
+        }
+
+        // イベント削除時
+        if (originalDeleteEvent) {
+            scheduleManager.deleteEvent = function(eventId) {
+                deleteEventFromSupabase(eventId);
+                return originalDeleteEvent.call(this, eventId);
+            };
+        }
 
         // スタッフ保存時
         scheduleManager.saveStaffMembers = function() {
             originalSaveStaff.call(this);
-
             // Supabaseにスタッフを保存
             saveStaffToSupabase(this.staffMembers || []);
         };
@@ -279,18 +303,18 @@ function setupAutoSave() {
     }
 }
 
-// ページ読み込み時に初期化
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('ページ読み込み完了 - 同期システム初期化');
-
-    // 既存のSupabase初期化を無効化
-    if (typeof supabaseSync !== 'undefined') {
-        supabaseSync.syncEnabled = false;
-    }
-
-    // シンプル同期システムを初期化
-    await initSimpleSync();
-});
+// ページ読み込み時に初期化（index-final.htmlから呼ばれるため、ここではコメントアウト）
+// document.addEventListener('DOMContentLoaded', async () => {
+//     console.log('ページ読み込み完了 - 同期システム初期化');
+//
+//     // 既存のSupabase初期化を無効化
+//     if (typeof supabaseSync !== 'undefined') {
+//         supabaseSync.syncEnabled = false;
+//     }
+//
+//     // シンプル同期システムを初期化
+//     await initSimpleSync();
+// });
 
 // グローバルに公開
 window.simpleSync = {

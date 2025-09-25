@@ -1,0 +1,760 @@
+/**
+ * カレンダー関連スタイル
+ */
+
+.calendar-container {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    max-width: 100%;
+    margin: 0 auto;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* カレンダーグリッド */
+.calendar-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+.vertical-calendar {
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    position: relative;
+}
+
+.vertical-calendar-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0; /* iOSでのズレ防止 */
+    border-radius: 0 0 8px 8px;
+    min-width: fit-content;
+    /* iOSでのレンダリング最適化 */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+}
+
+.date-row {
+    display: flex;
+    align-items: stretch;
+    min-height: 40px;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    overflow: visible;
+    transition: background-color 0.3s;
+    position: relative;
+    width: 100%;
+    /* ズレ防止 */
+    flex-wrap: nowrap;
+    gap: 0;
+}
+
+.date-row:hover {
+    background-color: #f8f9fa;
+}
+
+.date-row.sunday .date-cell {
+    background-color: #ffe5e5;
+    color: #dc3545;
+    position: sticky;
+    left: 0;
+    z-index: 10;
+}
+
+.date-row.saturday .date-cell {
+    background-color: #e5f2ff;
+    color: #007bff;
+    position: sticky;
+    left: 0;
+    z-index: 10;
+}
+
+.date-row.today {
+    background-color: #fff3cd;
+    border: 2px solid #ffc107;
+}
+
+.date-cell {
+    width: 120px;
+    padding: 8px 12px;
+    background-color: #f8f9fa;
+    border-right: 1px solid #e9ecef;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+    position: sticky;
+    left: 0;
+    z-index: 10;
+}
+
+/* 日付セルの固定 */
+.date-cell-fixed {
+    position: sticky;
+    left: 0;
+    z-index: 10;
+}
+
+.date-number {
+    font-size: 14px;
+}
+
+.day-name {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.events-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(var(--staff-count, 9), minmax(110px, 1fr));
+    gap: 0; /* iOSでのズレ防止 */
+    padding: 5px 5px 5px 0;
+    min-width: calc(var(--staff-count, 9) * 110px);
+    /* グリッドレイアウトを固定 */
+    align-items: stretch;
+}
+
+.event-cell {
+    min-height: 45px;
+    min-width: 100px;
+    width: 100px;
+    padding: 1px;
+    border: 1px solid #e9ecef;
+    border-radius: 3px;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+.event-cell:hover {
+    background-color: #f8f9fa;
+    border-color: #667eea;
+    box-shadow: inset 0 0 0 1px #667eea;
+}
+
+/* イベント項目 */
+.inline-edit-input {
+    width: 95%;
+    padding: 2px 3px;
+    border: 1px solid #667eea;
+    border-radius: 2px;
+    font-size: 10px;
+    outline: none;
+    background: white;
+    text-align: center;
+    margin: 2px auto;
+}
+
+.event-item-small {
+    padding: 1px 3px;
+    border-radius: 2px;
+    font-size: 10px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.event-item-plain {
+    padding: 2px;
+    font-size: 10px;
+    color: #333;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    cursor: pointer;
+    word-break: break-word;
+    white-space: normal;
+    line-height: 1.2;
+    width: calc(100% - 4px);
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.event-item-plain.text-sm {
+    font-size: 9px;
+}
+
+.event-item-plain.text-xs {
+    font-size: 8px;
+}
+
+.event-item-plain:hover {
+    background-color: #f8f9fa;
+}
+
+.empty-grid {
+    min-height: 20px;
+    opacity: 0.3;
+}
+
+.event-time-small {
+    font-size: clamp(7px, 1vw, 9px);
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.event-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    width: 100%;
+    overflow: hidden;
+    text-align: center;
+    padding: 0 2px;
+    box-sizing: border-box;
+}
+
+.event-title-small {
+    overflow: hidden;
+    font-size: inherit;
+    font-weight: 500;
+    word-break: break-word;
+    white-space: normal;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.event-note-small {
+    font-size: calc(1em - 1px);
+    color: #666;
+    overflow: hidden;
+    word-break: break-word;
+    white-space: normal;
+    font-style: italic;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* 特拡イベント */
+.campaign-row {
+    grid-column: 1 / -1;
+    margin-bottom: 5px;
+    display: flex;
+    gap: 5px;
+}
+
+.campaign-event {
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #333;
+    border: 1px solid rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    flex: 1;
+}
+
+.campaign-event:hover {
+    transform: scale(1.02);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.campaign-only {
+    width: 100%;
+    padding: 2px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.campaign-event-full {
+    padding: 5px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #333;
+    border: 1px solid rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+    word-break: break-word;
+    box-sizing: border-box;
+}
+
+.campaign-event-full:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.campaign-title {
+    display: block;
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.campaign-note {
+    display: block;
+    font-size: 10px;
+    font-weight: normal;
+    opacity: 0.8;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* スタッフヘッダー */
+.staff-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 10px 0;
+    margin-bottom: 2px;
+    border-radius: 4px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+/* スタッフヘッダー固定 */
+.staff-header-row {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: white;
+}
+
+.staff-header-label {
+    display: none;
+}
+
+.staff-inputs {
+    display: grid;
+    grid-template-columns: 120px repeat(var(--staff-count, 9), minmax(110px, 1fr));
+    gap: 0; /* iOSでのズレ防止 */
+    padding: 10px 5px;
+    align-items: stretch; /* 高さを揃える */
+    min-width: calc(120px + var(--staff-count, 9) * 110px);
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #667eea;
+}
+
+.date-header-cell {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-width: 120px;
+    width: 120px;
+    flex-shrink: 0;
+    position: sticky;
+    left: 0;
+    z-index: 11;
+    color: white;
+    font-weight: 600;
+    text-align: center;
+    padding: 10px;
+}
+
+.staff-input-cell {
+    background: white;
+    padding: 5px;
+    border-radius: 4px;
+    min-width: 100px;
+    width: 100px;
+    flex-shrink: 0;
+}
+
+.staff-input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.delete-staff-btn {
+    position: absolute;
+    top: 50%;
+    right: 2px;
+    transform: translateY(-50%);
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    width: 20px;
+    height: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    opacity: 0.7;
+}
+
+.delete-staff-btn:hover {
+    opacity: 1;
+    background: #c82333;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.staff-input {
+    width: 100%;
+    padding: 5px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+    text-align: center;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.staff-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+.add-staff-btn {
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    width: 35px;
+    height: 30px;
+}
+
+.add-staff-btn:hover {
+    background: #218838;
+    transform: scale(1.1);
+}
+
+/* タブレット用 (768px - 1024px) */
+@media (max-width: 1024px) {
+    .calendar-container {
+        padding: 15px;
+    }
+
+    .staff-inputs {
+        grid-template-columns: 100px repeat(9, minmax(100px, 1fr));
+    }
+
+    .date-cell {
+        width: 100px;
+        padding: 6px 8px;
+        font-size: 12px;
+        position: sticky;
+        left: 0;
+        z-index: 10;
+    }
+
+    .events-grid {
+        grid-template-columns: repeat(9, minmax(100px, 1fr));
+    }
+
+    .event-cell {
+        min-width: 100px;
+        min-height: 35px;
+    }
+
+    .staff-input {
+        min-width: 100px;
+        font-size: 12px;
+        padding: 4px 6px;
+    }
+}
+
+/* スマートフォン用 (768px以下) */
+@media (max-width: 768px) {
+    .calendar-container {
+        padding: 3px;
+        max-width: 100%;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* スタッフヘッダーのモバイル対応 */
+    .staff-header {
+        padding: 2px 0;
+        position: relative;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        z-index: 5;
+        margin-bottom: 2px;
+    }
+
+    .staff-inputs {
+        display: grid;
+        grid-template-columns: 40px repeat(var(--staff-count, 9), 1fr);
+        gap: 1px;
+        padding: 4px;
+        font-size: 10px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        position: relative;
+        z-index: 10;
+        order: 2;
+    }
+
+    .date-header-cell {
+        min-width: 40px;
+        width: 40px;
+        font-size: 11px;
+        font-weight: bold;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 4px;
+        position: sticky;
+        left: 0;
+        z-index: 11;
+    }
+
+    .staff-input-cell {
+        min-width: auto;
+        padding: 1px;
+        position: relative;
+        overflow: visible;
+    }
+
+    .staff-input {
+        width: 100%;
+        font-size: 10px;
+        padding: 3px 2px;
+        height: 26px;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        -webkit-appearance: none;
+        text-align: center;
+        background: white;
+    }
+
+    /* カレンダーのモバイル対応 - 超コンパクト化 */
+    .vertical-calendar {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .vertical-calendar-grid {
+        gap: 0;
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 100px); /* ヘッダー分を引く */
+    }
+
+    .date-row {
+        min-height: 32px;
+        display: grid;
+        grid-template-columns: 40px 1fr;
+        border-bottom: 1px solid #e0e0e0;
+        align-items: stretch;
+    }
+
+    .date-cell {
+        width: 40px;
+        padding: 4px;
+        font-size: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8f9fa;
+        border-right: 1px solid #e0e0e0;
+        position: sticky;
+        left: 0;
+        z-index: 5;
+    }
+
+    .date-number {
+        font-size: 11px;
+        font-weight: bold;
+        margin-right: 2px;
+    }
+
+    .day-name {
+        font-size: 9px;
+        display: inline;
+        color: #666;
+    }
+
+    .events-grid {
+        display: grid;
+        grid-template-columns: repeat(var(--staff-count, 9), 1fr);
+        gap: 0;
+        padding: 0;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .event-cell {
+        min-width: 0;
+        min-height: 32px;
+        padding: 2px;
+        border-right: 1px solid #e0e0e0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        overflow: hidden;
+        touch-action: manipulation;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .event-item-plain {
+        font-size: 9px !important;
+        padding: 2px !important;
+        line-height: 1.2;
+        word-break: break-all;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        width: 100%;
+        height: 100%;
+    }
+
+    .event-content {
+        display: block;
+        width: 100%;
+        text-align: center;
+    }
+
+    .event-title-small {
+        font-size: 9px !important;
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: normal;
+        word-break: break-all;
+        line-height: 1.2;
+    }
+
+    .event-note-small {
+        display: none; /* モバイルでは備考非表示 */
+    }
+
+    .event-time-small {
+        display: none; /* モバイルでは時間非表示 */
+    }
+
+    .campaign-event-full {
+        font-size: 10px;
+        padding: 2px;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .campaign-title {
+        font-size: 10px;
+        font-weight: bold;
+    }
+
+    .campaign-note {
+        display: none;
+    }
+
+    .campaign-only {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+/* 小型スマートフォン用 (480px以下) */
+@media (max-width: 480px) {
+    .staff-inputs {
+        grid-template-columns: 35px repeat(var(--staff-count, 9), minmax(35px, 1fr));
+        gap: 1px;
+        padding: 2px;
+        min-width: 100%;
+        overflow-x: auto;
+    }
+
+    .date-header-cell {
+        width: 35px;
+        font-size: 10px;
+        padding: 2px;
+    }
+
+    .staff-input {
+        font-size: 9px;
+        padding: 2px 1px;
+        height: 22px;
+        width: 100%;
+        min-width: 30px;
+    }
+
+    .staff-input-cell {
+        min-width: 35px;
+        width: auto;
+    }
+
+    .date-cell {
+        width: 35px;
+        font-size: 9px;
+        padding: 2px;
+    }
+
+    .date-row {
+        display: flex;
+        min-height: 28px;
+        width: 100%;
+        overflow: visible;
+    }
+
+    .date-number {
+        font-size: 10px;
+    }
+
+    .day-name {
+        font-size: 8px;
+    }
+
+    .event-cell {
+        min-height: 28px;
+        font-size: 9px;
+        padding: 1px;
+    }
+
+    .event-item-plain {
+        font-size: 8px !important;
+    }
+
+    .event-title-small {
+        font-size: 8px !important;
+    }
+
+    .campaign-event-full {
+        font-size: 9px;
+    }
+
+    .campaign-title {
+        font-size: 9px;
+    }
+}
