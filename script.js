@@ -23,12 +23,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Supabase初期化
     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // 初期データ読み込み
-    await loadStaffMembers();
-    await loadEvents();
+    // 初期データ読み込み（まずLocalStorageから）
+    loadStaffMembers();
+    loadEvents();
 
     // UI初期化
     initializeUI();
+
+    // Supabaseから最新データを取得
+    await syncData();
 
     // 定期同期（5秒ごと）
     setInterval(syncData, 5000);
@@ -599,7 +602,8 @@ function loadStaffMembers() {
 // ===================================
 async function syncData() {
     try {
-        document.getElementById('syncStatus').textContent = '同期中...';
+        const syncStatus = document.getElementById('syncStatus');
+        if (syncStatus) syncStatus.textContent = '同期中...';
 
         // イベントデータを取得
         const { data: eventData, error: eventError } = await supabase
@@ -607,9 +611,9 @@ async function syncData() {
             .select('*')
             .eq('user_id', USER_ID);
 
-        if (!eventError && eventData) {
-            // ローカルイベントと統合
-            const supabaseEvents = eventData.map(e => ({
+        if (!eventError && eventData && eventData.length > 0) {
+            // Supabaseのデータを優先（完全置き換え）
+            events = eventData.map(e => ({
                 id: e.event_id || e.id.toString(),
                 date: e.date,
                 person: e.person,
@@ -621,15 +625,8 @@ async function syncData() {
                 campaignMembers: e.campaign_members
             }));
 
-            // 重複を除いて統合
-            const eventIds = new Set(events.map(e => e.id));
-            supabaseEvents.forEach(e => {
-                if (!eventIds.has(e.id)) {
-                    events.push(e);
-                }
-            });
-
             saveEvents();
+            renderCalendar();
         }
 
         // スタッフデータを取得
@@ -639,27 +636,29 @@ async function syncData() {
             .eq('user_id', USER_ID)
             .order('staff_index');
 
-        if (!staffError && staffData) {
-            const newStaff = new Array(Math.max(staffData.length, 9)).fill('');
+        if (!staffError && staffData && staffData.length > 0) {
+            const maxIndex = Math.max(...staffData.map(s => s.staff_index));
+            const newStaff = new Array(Math.max(maxIndex + 1, 9)).fill('');
+
             staffData.forEach(s => {
-                if (s.staff_index < newStaff.length) {
+                if (s.staff_index >= 0 && s.staff_index < newStaff.length) {
                     newStaff[s.staff_index] = s.name || '';
                 }
             });
 
-            // スタッフが変更された場合のみ更新
-            if (JSON.stringify(staffMembers) !== JSON.stringify(newStaff)) {
-                staffMembers = newStaff;
-                localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
-                renderStaffInputs();
-                renderCalendar();
-            }
+            // スタッフデータを更新
+            staffMembers = newStaff;
+            localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
+            renderStaffInputs();
+            renderCalendar();
         }
 
-        document.getElementById('syncStatus').textContent = '同期完了';
-        setTimeout(() => {
-            document.getElementById('syncStatus').textContent = '';
-        }, 2000);
+        if (syncStatus) {
+            syncStatus.textContent = '同期完了';
+            setTimeout(() => {
+                syncStatus.textContent = '';
+            }, 2000);
+        }
 
     } catch (error) {
         console.error('同期エラー:', error);
