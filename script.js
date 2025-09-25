@@ -501,11 +501,22 @@ function getHolidays(year) {
 // ===================================
 function renderCalendar() {
     const container = document.getElementById('calendar');
+    if (!container) return;
+
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
 
-    // CSS変数でスタッフ数を設定
-    document.documentElement.style.setProperty('--staff-count', staffMembers.length);
+    // チェックされた（選択された）担当者のみをフィルタリング
+    const selectedStaff = staffMembers.filter(name => name && name.trim() !== '');
+
+    // 担当者が設定されていない場合はカレンダーを表示しない
+    if (!selectedStaff || selectedStaff.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 50px; color: #999;">担当者を設定してください</div>';
+        return;
+    }
+
+    // CSS変数でスタッフ数を設定（選択された担当者数）
+    document.documentElement.style.setProperty('--staff-count', selectedStaff.length);
 
     // 祝日データを取得
     const holidays = getHolidays(year);
@@ -519,8 +530,10 @@ function renderCalendar() {
     // ヘッダー行（日付と担当者名）
     html += '<div class="calendar-header">';
     html += '<div class="calendar-cell header-cell date-header">日付</div>';
-    staffMembers.forEach((name, index) => {
-        html += `<div class="calendar-cell header-cell">${name || `担当者${index + 1}`}</div>`;
+
+    // 選択された担当者名を表示（優先順位順）
+    selectedStaff.forEach(name => {
+        html += `<div class="calendar-cell header-cell">${name}</div>`;
     });
     html += '</div>';
 
@@ -573,7 +586,7 @@ function renderCalendar() {
             // 特拡の日は全体で1枠として表示（クリックで編集可能）
             html += `
                 <div class="calendar-cell event-cell campaign-cell-wide"
-                     style="background-color: ${isCampaign.color || '#E1BEE7'}; grid-column: span ${staffMembers.length}; cursor: pointer;"
+                     style="background-color: ${isCampaign.color || '#E1BEE7'}; grid-column: span ${selectedStaff.length}; cursor: pointer;"
                      data-campaign-id="${isCampaign.id}">
                     <div class="campaign-info">
                         <div class="campaign-type">${campaignTypeName}</div>
@@ -584,8 +597,10 @@ function renderCalendar() {
             `;
         } else {
             // 通常の日は各担当者のイベントセル
-            staffMembers.forEach((name, index) => {
-                const event = events.find(e => e.date === date && e.person === `staff-${index}`);
+            selectedStaff.forEach(name => {
+                // staffMembers配列でのインデックスを取得
+                const originalIndex = staffMembers.indexOf(name);
+                const event = events.find(e => e.date === date && e.person === `staff-${originalIndex}`);
 
                 if (event) {
                     // 文字数によるサイズ調整クラスを決定
@@ -619,7 +634,7 @@ function renderCalendar() {
                     html += `
                         <div class="calendar-cell event-cell empty-cell"
                              data-date="${date}"
-                             data-person-index="${index}">
+                             data-person-index="${originalIndex}">
                         </div>
                     `;
                 }
