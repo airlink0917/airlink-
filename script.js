@@ -362,11 +362,13 @@ function renderCalendar() {
                     // 文字数によるサイズ調整クラスを決定
                     const titleLength = event.title ? event.title.length : 0;
                     let titleClass = 'event-title';
-                    if (titleLength > 15) {
+                    if (titleLength > 12) {
                         titleClass += ' very-long-text';
-                    } else if (titleLength > 8) {
+                    } else if (titleLength > 6) {
                         titleClass += ' long-text';
                     }
+
+                    console.log('Event title:', event.title, 'Length:', titleLength, 'Class:', titleClass);
 
                     // 通常のイベント
                     html += `
