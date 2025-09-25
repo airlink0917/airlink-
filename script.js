@@ -368,11 +368,16 @@ function renderCalendar() {
                         titleClass += ' long-text';
                     }
 
+                    // セルのクラスを決定
+                    let cellClass = 'calendar-cell event-cell has-event';
+                    if (event.time) cellClass += ' has-time';
+                    if (event.note) cellClass += ' has-note';
+
                     console.log('Event title:', event.title, 'Length:', titleLength, 'Class:', titleClass);
 
                     // 通常のイベント
                     html += `
-                        <div class="calendar-cell event-cell has-event"
+                        <div class="${cellClass}"
                              style="background-color: ${event.color || 'transparent'};"
                              data-event-id="${event.id}">
                             <div class="${titleClass}">${event.title}</div>

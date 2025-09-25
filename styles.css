@@ -361,19 +361,19 @@ main {
 }
 
 .event-title {
-    font-size: 8px !important;
+    font-size: 10px !important;
     font-weight: bold;
     margin: 0 !important;
     padding: 0 !important;
     width: 96px !important;
     max-width: 96px !important;
     height: auto !important;
-    max-height: 24px !important;
+    max-height: 30px !important;
     overflow: hidden !important;
     word-wrap: break-word !important;
     word-break: break-all !important;
     white-space: normal !important;
-    line-height: 1.0 !important;
+    line-height: 1.1 !important;
     display: -webkit-box !important;
     -webkit-line-clamp: 3 !important;
     -webkit-box-orient: vertical !important;
@@ -382,45 +382,80 @@ main {
     top: 2px;
     left: 2px;
     right: 2px;
+    color: #333 !important;
+    z-index: 3;
 }
 
 /* 長文用の文字サイズ調整クラス */
 .event-title.long-text {
-    font-size: 7px !important;
+    font-size: 9px !important;
     -webkit-line-clamp: 3 !important;
-    max-height: 21px !important;
+    max-height: 27px !important;
 }
 
 .event-title.very-long-text {
-    font-size: 6px !important;
+    font-size: 8px !important;
     -webkit-line-clamp: 4 !important;
-    max-height: 24px !important;
-    line-height: 0.95 !important;
+    max-height: 30px !important;
+    line-height: 1.0 !important;
 }
 
 .event-time {
-    font-size: 10px;
-    color: #666;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    width: 100%;
+    font-size: 7px !important;
+    color: #666 !important;
+    font-weight: normal !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    width: 96px !important;
+    max-width: 96px !important;
+    position: absolute !important;
+    bottom: 14px !important;
+    left: 2px !important;
+    right: 2px !important;
+    line-height: 1.0 !important;
+    z-index: 2 !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 .event-note {
-    font-size: 9px;
-    color: #888;
-    margin-top: 2px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    width: 100%;
-    max-height: 12px;
+    font-size: 6px !important;
+    color: #888 !important;
+    font-weight: normal !important;
+    font-style: italic !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    width: 96px !important;
+    max-width: 96px !important;
+    position: absolute !important;
+    bottom: 2px !important;
+    left: 2px !important;
+    right: 2px !important;
+    line-height: 1.0 !important;
+    z-index: 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    max-height: 10px !important;
 }
 
-/* メモがある場合のタイトル調整 */
+/* メモや時間がある場合のタイトル調整 */
 .has-event .event-title {
-    max-height: 14px;
+    max-height: 35px !important;
+}
+
+/* 時間と備考の両方がある場合 */
+.has-event.has-time.has-note .event-title {
+    max-height: 25px !important;
+    -webkit-line-clamp: 2 !important;
+}
+
+/* 時間または備考のどちらかがある場合 */
+.has-event.has-time .event-title,
+.has-event.has-note .event-title {
+    max-height: 30px !important;
+    -webkit-line-clamp: 3 !important;
 }
 
 .campaign-cell {
@@ -755,8 +790,8 @@ main {
     }
 
     .event-title {
-        font-size: 6px !important;
-        max-height: 18px !important;
+        font-size: 8px !important;
+        max-height: 22px !important;
         width: 68px !important;
         max-width: 68px !important;
         -webkit-line-clamp: 3 !important;
@@ -766,15 +801,30 @@ main {
     }
 
     .event-title.long-text {
-        font-size: 5px !important;
+        font-size: 7px !important;
+        max-height: 21px !important;
+        -webkit-line-clamp: 3 !important;
+    }
+
+    .event-title.very-long-text {
+        font-size: 6px !important;
         max-height: 20px !important;
         -webkit-line-clamp: 4 !important;
     }
 
-    .event-title.very-long-text {
+    .event-time {
+        font-size: 5px !important;
+        bottom: 12px !important;
+        width: 68px !important;
+        max-width: 68px !important;
+    }
+
+    .event-note {
         font-size: 4px !important;
-        max-height: 20px !important;
-        -webkit-line-clamp: 5 !important;
+        bottom: 1px !important;
+        width: 68px !important;
+        max-width: 68px !important;
+        max-height: 8px !important;
     }
 
     .event-title {
