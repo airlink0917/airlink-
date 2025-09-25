@@ -245,7 +245,9 @@ main {
 
 .calendar-cell {
     min-width: 100px;
-    padding: 8px;
+    max-width: 100px;
+    width: 100px;
+    padding: 2px;
     border-right: 1px solid #e0e0e0;
     border-bottom: 1px solid #e0e0e0;
     text-align: center;
@@ -255,6 +257,8 @@ main {
     justify-content: center;
     align-items: center;
     flex-shrink: 0;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 .calendar-cell:last-child {
@@ -325,21 +329,27 @@ main {
     cursor: pointer;
     min-height: 60px;
     max-height: 60px;
+    height: 60px;
+    min-width: 100px;
+    max-width: 100px;
+    width: 100px;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    transition: all 0.3s;
+    align-items: center;
+    transition: none;
     /* タッチ操作の最適化 */
     touch-action: manipulation;
     user-select: none;
     -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent;
-    /* サイズ固定とコンテンツオーバーフロー処理 */
-    overflow: hidden;
+    /* サイズ完全固定とオーバーフロー完全制御 */
+    overflow: hidden !important;
     word-wrap: break-word;
     word-break: break-all;
-    padding: 2px 4px;
+    padding: 1px;
     box-sizing: border-box;
+    position: relative;
 }
 
 .empty-cell:hover {
@@ -351,42 +361,41 @@ main {
 }
 
 .event-title {
-    font-size: 10px;
+    font-size: 8px !important;
     font-weight: bold;
-    margin-bottom: 1px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    width: 100%;
-    line-height: 1.1;
-    /* 長文用の文字サイズ調整 */
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 96px !important;
+    max-width: 96px !important;
+    height: auto !important;
+    max-height: 24px !important;
+    overflow: hidden !important;
+    word-wrap: break-word !important;
+    word-break: break-all !important;
+    white-space: normal !important;
+    line-height: 1.0 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 3 !important;
+    -webkit-box-orient: vertical !important;
+    text-overflow: clip !important;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    right: 2px;
 }
 
 /* 長文用の文字サイズ調整クラス */
 .event-title.long-text {
-    font-size: 8px !important;
-    white-space: normal !important;
-    text-overflow: clip !important;
-    line-height: 1.0 !important;
-    max-height: 16px !important;
-    overflow: hidden !important;
-    display: -webkit-box !important;
-    -webkit-line-clamp: 2 !important;
-    -webkit-box-orient: vertical !important;
-    word-break: break-all !important;
+    font-size: 7px !important;
+    -webkit-line-clamp: 3 !important;
+    max-height: 21px !important;
 }
 
 .event-title.very-long-text {
-    font-size: 7px !important;
-    white-space: normal !important;
-    text-overflow: clip !important;
-    line-height: 0.9 !important;
-    max-height: 14px !important;
-    overflow: hidden !important;
-    display: -webkit-box !important;
-    -webkit-line-clamp: 2 !important;
-    -webkit-box-orient: vertical !important;
-    word-break: break-all !important;
+    font-size: 6px !important;
+    -webkit-line-clamp: 4 !important;
+    max-height: 24px !important;
+    line-height: 0.95 !important;
 }
 
 .event-time {
@@ -710,8 +719,10 @@ main {
 
     .calendar-cell {
         min-width: 70px;
+        max-width: 70px;
+        width: 70px;
         font-size: 9px;
-        padding: 4px 2px;
+        padding: 1px;
         line-height: 1.2;
     }
 
@@ -737,25 +748,33 @@ main {
     .event-cell {
         min-height: 40px;
         max-height: 40px;
+        height: 40px;
+        min-width: 70px;
+        max-width: 70px;
+        width: 70px;
     }
 
     .event-title {
-        font-size: 8px;
-        max-height: 10px;
+        font-size: 6px !important;
+        max-height: 18px !important;
+        width: 68px !important;
+        max-width: 68px !important;
+        -webkit-line-clamp: 3 !important;
+        top: 1px !important;
+        left: 1px !important;
+        right: 1px !important;
     }
 
     .event-title.long-text {
-        font-size: 6px !important;
-        max-height: 10px !important;
-        line-height: 0.9 !important;
-        -webkit-line-clamp: 2 !important;
+        font-size: 5px !important;
+        max-height: 20px !important;
+        -webkit-line-clamp: 4 !important;
     }
 
     .event-title.very-long-text {
-        font-size: 5px !important;
-        max-height: 10px !important;
-        line-height: 0.8 !important;
-        -webkit-line-clamp: 2 !important;
+        font-size: 4px !important;
+        max-height: 20px !important;
+        -webkit-line-clamp: 5 !important;
     }
 
     .event-title {

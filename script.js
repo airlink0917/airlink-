@@ -420,9 +420,25 @@ function setupCalendarEventHandlers() {
             clearTimeout(window.scrollTimeout);
             window.scrollTimeout = setTimeout(() => {
                 isScrolling = false;
-            }, 150);
+                console.log('Scroll stopped, isScrolling reset to false');
+            }, 200);
+        });
+
+        // スクロール終了検出
+        scrollWrapper.addEventListener('scrollend', () => {
+            setTimeout(() => {
+                isScrolling = false;
+                console.log('Scroll ended, isScrolling reset to false');
+            }, 100);
         });
     }
+
+    // ページタッチ時のスクロール状態リセット
+    document.addEventListener('touchstart', () => {
+        if (Date.now() - touchStartTime > 1000) {
+            isScrolling = false;
+        }
+    }, { passive: true });
 
     // キャンペーンセルのハンドラー
     document.querySelectorAll('.campaign-cell-wide[data-campaign-id]').forEach(cell => {
@@ -444,57 +460,66 @@ function setupCalendarEventHandlers() {
     });
 }
 
-// セルのインタラクション設定（スクロール対応）
+// セルのインタラクション設定（シンプル版）
 function setupCellInteraction(cell, action) {
+    let touchStarted = false;
+    let hasMoved = false;
+
     // タッチ開始
     cell.addEventListener('touchstart', (e) => {
+        touchStarted = true;
+        hasMoved = false;
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
         touchStartTime = Date.now();
+        console.log('Touch start on cell');
     }, { passive: true });
 
     // タッチ移動
     cell.addEventListener('touchmove', (e) => {
-        // タッチ移動があった場合はスクロール中と判定
+        if (!touchStarted) return;
+
         const touchX = e.touches[0].clientX;
         const touchY = e.touches[0].clientY;
         const deltaX = Math.abs(touchX - touchStartX);
         const deltaY = Math.abs(touchY - touchStartY);
 
-        if (deltaX > 10 || deltaY > 10) {
+        if (deltaX > 15 || deltaY > 15) {
+            hasMoved = true;
             isScrolling = true;
         }
     }, { passive: true });
 
     // タッチ終了
     cell.addEventListener('touchend', (e) => {
-        e.preventDefault();
+        if (!touchStarted) return;
+        touchStarted = false;
 
-        const touchEndTime = Date.now();
-        const touchDuration = touchEndTime - touchStartTime;
+        const touchDuration = Date.now() - touchStartTime;
 
-        // スクロール中または長時間のタッチの場合は処理しない
-        if (isScrolling || touchDuration > 500) {
-            return;
+        console.log('Touch end:', {
+            hasMoved,
+            isScrolling,
+            duration: touchDuration,
+            cell: cell.className
+        });
+
+        // 移動が少なく、時間が短い場合のみ処理
+        if (!hasMoved && !isScrolling && touchDuration < 800) {
+            e.preventDefault();
+            console.log('タップ処理実行');
+            setTimeout(() => action(), 100);
+        } else {
+            console.log('タップキャンセル: moved=', hasMoved, 'scrolling=', isScrolling);
         }
-
-        // 短時間のタップのみ処理
-        setTimeout(() => {
-            if (!isScrolling) {
-                console.log('タップ処理実行: duration=', touchDuration, 'ms');
-                action();
-            } else {
-                console.log('スクロール中のためタップをキャンセル');
-            }
-        }, 50);
     }, { passive: false });
 
     // デスクトップ用クリックイベント
     cell.addEventListener('click', (e) => {
-        // モバイルではない場合のみ処理
         if (!isMobileDevice()) {
             e.preventDefault();
             e.stopPropagation();
+            console.log('デスクトップクリック');
             action();
         }
     });
