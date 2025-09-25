@@ -206,12 +206,13 @@ function renderStaffInputs() {
             staffMembers[index] = e.target.value;
             console.log(`担当者${index + 1}を更新: ${e.target.value}`);
 
-            // デバウンス処理：入力が止まってから1500ms後に保存（モバイルは遅延を長く）
+            // デバウンス処理：入力が止まってから保存
             clearTimeout(debounceTimer);
-            const delay = isMobileDevice() ? 2000 : 500;
+            const delay = isMobileDevice() ? 3000 : 500;
             debounceTimer = setTimeout(() => {
-                saveStaffMembers();
-                // モバイルではカレンダー再描画をさらに避ける
+                // モバイルの場合はローカル保存のみ（Supabase同期をスキップ）
+                saveStaffMembers(isMobileDevice());
+                // モバイルではカレンダー再描画をしない
                 if (!isMobileDevice()) {
                     // PCのみ、フォーカスが外れている場合にカレンダー更新
                     if (document.activeElement !== e.target) {
@@ -226,16 +227,25 @@ function renderStaffInputs() {
             const index = parseInt(e.target.dataset.index);
             staffMembers[index] = e.target.value;
             clearTimeout(debounceTimer);
-            saveStaffMembers();
 
-            // モバイルの場合は少し遅延させてからカレンダーを更新
-            const updateDelay = isMobileDevice() ? 1000 : 100;
+            // 次のフォーカス先を確認
             setTimeout(() => {
-                // 他のstaff-inputにフォーカスが移っていない場合のみ更新
-                if (!document.activeElement || !document.activeElement.classList.contains('staff-input')) {
-                    renderCalendar();
+                const nextFocused = document.activeElement;
+                const isStaffInput = nextFocused && nextFocused.classList.contains('staff-input');
+
+                if (isStaffInput) {
+                    // 他のstaff-inputにフォーカスが移った場合はローカル保存のみ
+                    localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
+                } else {
+                    // 完全にフォーカスが外れた場合のみSupabase同期とカレンダー更新
+                    saveStaffMembers(false);
+                    // モバイルの場合は遅延を長くする
+                    const updateDelay = isMobileDevice() ? 2000 : 100;
+                    setTimeout(() => {
+                        renderCalendar();
+                    }, updateDelay);
                 }
-            }, updateDelay);
+            }, 10);
         });
 
         // モバイル用: フォーカス時にスクロールを無効化
@@ -896,9 +906,14 @@ function loadEvents() {
     }
 }
 
-function saveStaffMembers() {
+function saveStaffMembers(skipSupabase = false) {
     localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
-    saveStaffToSupabase();
+
+    // モバイルの場合、またはスキップ指定の場合はSupabase保存をスキップ
+    if (!skipSupabase && !isMobileDevice()) {
+        saveStaffToSupabase();
+    }
+
     // 変更時に自動バックアップも作成
     if (autoBackupInterval) {
         createBackup();
@@ -920,6 +935,13 @@ function loadStaffMembers() {
 async function syncData() {
     if (!supabase) {
         console.error('同期エラー: Supabaseが初期化されていません');
+        const syncStatus = document.getElementById('syncStatus');
+        if (syncStatus) {
+            syncStatus.textContent = '同期エラー';
+            setTimeout(() => {
+                syncStatus.textContent = '';
+            }, 3000);
+        }
         return;
     }
 
@@ -988,7 +1010,13 @@ async function syncData() {
 
     } catch (error) {
         console.error('同期エラー:', error);
-        document.getElementById('syncStatus').textContent = '同期エラー';
+        const syncStatus = document.getElementById('syncStatus');
+        if (syncStatus) {
+            syncStatus.textContent = '同期エラー';
+            setTimeout(() => {
+                syncStatus.textContent = '';
+            }, 3000);
+        }
     }
 }
 
@@ -1127,6 +1155,13 @@ async function saveStaffToSupabase() {
 
         if (deleteError) {
             console.error('スタッフ削除エラー:', deleteError);
+            const syncStatus = document.getElementById('syncStatus');
+            if (syncStatus) {
+                syncStatus.textContent = '同期エラー';
+                setTimeout(() => {
+                    syncStatus.textContent = '';
+                }, 3000);
+            }
             return;
         }
 
@@ -1143,13 +1178,34 @@ async function saveStaffToSupabase() {
 
         if (insertError) {
             console.error('スタッフ挿入エラー:', insertError);
+            const syncStatus = document.getElementById('syncStatus');
+            if (syncStatus) {
+                syncStatus.textContent = '同期エラー';
+                setTimeout(() => {
+                    syncStatus.textContent = '';
+                }, 3000);
+            }
         } else {
             console.log('スタッフ保存成功:', data);
-            setTimeout(() => syncData(), 500);
+            // syncDataの呼び出しを削除（無限ループ防止）
+            const syncStatus = document.getElementById('syncStatus');
+            if (syncStatus) {
+                syncStatus.textContent = '保存完了';
+                setTimeout(() => {
+                    syncStatus.textContent = '';
+                }, 2000);
+            }
         }
 
     } catch (error) {
         console.error('スタッフ保存エラー:', error);
+        const syncStatus = document.getElementById('syncStatus');
+        if (syncStatus) {
+            syncStatus.textContent = '同期エラー';
+            setTimeout(() => {
+                syncStatus.textContent = '';
+            }, 3000);
+        }
     }
 }
 
