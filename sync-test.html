@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>同期機能テスト</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        #eventList {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background: #fafafa;
+            border-radius: 4px;
+        }
+        .event-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 4px;
+            border-left: 4px solid #4CAF50;
+        }
+        .sync-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-left: 10px;
+            background: #ccc;
+        }
+        .sync-indicator.syncing {
+            background: orange;
+            animation: pulse 1s infinite;
+        }
+        .sync-indicator.synced {
+            background: #4CAF50;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <h1>日程システム 同期機能テスト <span class="sync-indicator" id="syncIndicator"></span></h1>
+
+    <div class="test-section">
+        <h2>Supabase接続状態</h2>
+        <div id="connectionStatus" class="status info">接続確認中...</div>
+    </div>
+
+    <div class="test-section">
+        <h2>同期テスト</h2>
+        <button onclick="testSync()">手動同期実行</button>
+        <button onclick="addTestEvent()">テストイベント追加</button>
+        <button onclick="clearLocalData()">ローカルデータクリア</button>
+        <button onclick="clearSupabaseData()">Supabaseデータクリア</button>
+        <div id="syncStatus" class="status info">待機中</div>
+    </div>
+
+    <div class="test-section">
+        <h2>現在のイベント</h2>
+        <p>ローカル: <span id="localCount">0</span>件 | Supabase: <span id="supabaseCount">0</span>件</p>
+        <div id="eventList"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>自動同期状態</h2>
+        <p>最終同期: <span id="lastSync">未実行</span></p>
+        <p>次回同期: <span id="nextSync">--</span></p>
+        <p>自動同期間隔: 30秒</p>
+    </div>
+
+    <script>
+        // Supabase設定
+        const SUPABASE_URL = 'https://igjkroqjhwhewtrprhds.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlnamtyb3FqaHdoZXd0cnByaGRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyNTQ5ODEsImV4cCI6MjA3MzgzMDk4MX0.7pD4mWSbr8FvGKIjkNSrQuLdUPISxayZGANZ27TuqzI';
+        const USER_ID = 'global_user';
+
+        let supabase = null;
+        let syncInterval = null;
+
+        // 初期化
+        async function init() {
+            try {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                document.getElementById('connectionStatus').className = 'status success';
+                document.getElementById('connectionStatus').textContent = '✅ Supabase接続成功';
+
+                // 初回データ取得
+                await loadData();
+
+                // 30秒ごとの自動同期
+                syncInterval = setInterval(autoSync, 30000);
+                updateNextSync();
+
+            } catch (error) {
+                document.getElementById('connectionStatus').className = 'status error';
+                document.getElementById('connectionStatus').textContent = '❌ Supabase接続失敗: ' + error.message;
+            }
+        }
+
+        // データ読み込み
+        async function loadData() {
+            // ローカルデータ
+            const localEvents = JSON.parse(localStorage.getItem('scheduleEvents') || '[]');
+            document.getElementById('localCount').textContent = localEvents.length;
+
+            // Supabaseデータ
+            try {
+                const { data, error } = await supabase
+                    .from('schedule_events')
+                    .select('*')
+                    .eq('user_id', USER_ID);
+
+                if (error) throw error;
+
+                document.getElementById('supabaseCount').textContent = data ? data.length : 0;
+                displayEvents(localEvents, data || []);
+
+            } catch (error) {
+                console.error('Supabase読み込みエラー:', error);
+            }
+        }
+
+        // イベント表示
+        function displayEvents(localEvents, supabaseEvents) {
+            const list = document.getElementById('eventList');
+            let html = '<h3>ローカルイベント:</h3>';
+
+            localEvents.slice(0, 5).forEach(event => {
+                html += `<div class="event-item">
+                    ${event.date} - ${event.title || '(タイトルなし)'}
+                    ${event.isCampaign ? ' [特拡]' : ''}
+                </div>`;
+            });
+
+            if (localEvents.length > 5) {
+                html += `<div class="event-item">... 他${localEvents.length - 5}件</div>`;
+            }
+
+            html += '<h3>Supabaseイベント:</h3>';
+
+            supabaseEvents.slice(0, 5).forEach(event => {
+                html += `<div class="event-item">
+                    ${event.date} - ${event.title || '(タイトルなし)'}
+                    ${event.is_campaign ? ' [特拡]' : ''}
+                </div>`;
+            });
+
+            if (supabaseEvents.length > 5) {
+                html += `<div class="event-item">... 他${supabaseEvents.length - 5}件</div>`;
+            }
+
+            list.innerHTML = html;
+        }
+
+        // 手動同期テスト
+        async function testSync() {
+            const indicator = document.getElementById('syncIndicator');
+            indicator.className = 'sync-indicator syncing';
+
+            document.getElementById('syncStatus').className = 'status warning';
+            document.getElementById('syncStatus').textContent = '⏳ 同期中...';
+
+            try {
+                // 本番と同じ同期処理を実行
+                await performSync();
+
+                document.getElementById('syncStatus').className = 'status success';
+                document.getElementById('syncStatus').textContent = '✅ 同期完了';
+                indicator.className = 'sync-indicator synced';
+
+                await loadData();
+                updateLastSync();
+
+            } catch (error) {
+                document.getElementById('syncStatus').className = 'status error';
+                document.getElementById('syncStatus').textContent = '❌ 同期失敗: ' + error.message;
+                indicator.className = 'sync-indicator';
+            }
+        }
+
+        // 実際の同期処理
+        async function performSync() {
+            const localEvents = JSON.parse(localStorage.getItem('scheduleEvents') || '[]');
+
+            // Supabaseから最新データ取得
+            const { data: remoteEvents, error } = await supabase
+                .from('schedule_events')
+                .select('*')
+                .eq('user_id', USER_ID);
+
+            if (error) throw error;
+
+            // マージ処理（簡易版）
+            const mergedEvents = [...localEvents];
+
+            // Supabaseのイベントをローカルに反映
+            remoteEvents.forEach(remoteEvent => {
+                const localIndex = mergedEvents.findIndex(e => e.id === remoteEvent.event_id);
+                if (localIndex === -1) {
+                    // ローカルにない場合は追加
+                    mergedEvents.push({
+                        id: remoteEvent.event_id,
+                        date: remoteEvent.date,
+                        title: remoteEvent.title,
+                        person: remoteEvent.person,
+                        color: remoteEvent.color,
+                        note: remoteEvent.note,
+                        time: remoteEvent.time,
+                        isCampaign: remoteEvent.is_campaign,
+                        campaignMembers: remoteEvent.campaign_members
+                    });
+                }
+            });
+
+            // マージ結果を保存
+            localStorage.setItem('scheduleEvents', JSON.stringify(mergedEvents));
+
+            return mergedEvents;
+        }
+
+        // テストイベント追加
+        function addTestEvent() {
+            const events = JSON.parse(localStorage.getItem('scheduleEvents') || '[]');
+            const now = new Date();
+            const testEvent = {
+                id: 'test_' + Date.now(),
+                date: now.toISOString().split('T')[0],
+                title: 'テストイベント ' + now.toLocaleTimeString(),
+                person: 'staff-0',
+                color: '#E1BEE7',
+                note: 'テスト',
+                isCampaign: false
+            };
+
+            events.push(testEvent);
+            localStorage.setItem('scheduleEvents', JSON.stringify(events));
+
+            // Supabaseにも保存
+            saveToSupabase(testEvent);
+
+            loadData();
+        }
+
+        // Supabaseへの保存
+        async function saveToSupabase(event) {
+            try {
+                const { data, error } = await supabase
+                    .from('schedule_events')
+                    .insert({
+                        user_id: USER_ID,
+                        event_id: event.id,
+                        title: event.title,
+                        date: event.date,
+                        person: event.person,
+                        color: event.color,
+                        note: event.note,
+                        is_campaign: event.isCampaign,
+                        campaign_members: event.campaignMembers || []
+                    });
+
+                if (error) throw error;
+                console.log('Supabase保存成功:', data);
+
+            } catch (error) {
+                console.error('Supabase保存エラー:', error);
+            }
+        }
+
+        // ローカルデータクリア
+        function clearLocalData() {
+            if (confirm('ローカルのデータをすべて削除しますか？')) {
+                localStorage.removeItem('scheduleEvents');
+                loadData();
+            }
+        }
+
+        // Supabaseデータクリア
+        async function clearSupabaseData() {
+            if (!confirm('Supabaseのデータをすべて削除しますか？')) return;
+
+            try {
+                const { error } = await supabase
+                    .from('schedule_events')
+                    .delete()
+                    .eq('user_id', USER_ID);
+
+                if (error) throw error;
+
+                alert('Supabaseデータを削除しました');
+                loadData();
+
+            } catch (error) {
+                alert('削除エラー: ' + error.message);
+            }
+        }
+
+        // 自動同期
+        async function autoSync() {
+            console.log('自動同期実行');
+            await testSync();
+            updateNextSync();
+        }
+
+        // 最終同期時刻更新
+        function updateLastSync() {
+            const now = new Date();
+            document.getElementById('lastSync').textContent = now.toLocaleTimeString();
+        }
+
+        // 次回同期時刻更新
+        function updateNextSync() {
+            const now = new Date();
+            now.setSeconds(now.getSeconds() + 30);
+            document.getElementById('nextSync').textContent = now.toLocaleTimeString();
+        }
+
+        // ページ離脱時にインターバルクリア
+        window.addEventListener('beforeunload', () => {
+            if (syncInterval) clearInterval(syncInterval);
+        });
+
+        // 初期化実行
+        init();
+    </script>
+</body>
+</html>

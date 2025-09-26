@@ -47,10 +47,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Supabaseから最新データを取得
     await syncData();
 
-    // 定期同期を無効化（手動同期のみ）
-    // 同期エラーを防ぐため、自動同期を停止
-    // const syncInterval = isMobileDevice() ? 10000 : 5000;
-    // setInterval(syncData, syncInterval);
+    // 定期同期を設定（30秒ごと）
+    setInterval(() => {
+        console.log('定期同期実行');
+        syncData();
+    }, 30000);
 
     // ページ表示時に強制同期
     document.addEventListener('visibilitychange', () => {
@@ -58,6 +59,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log('ページが表示されました。同期を開始します。');
             syncData();
         }
+    });
+
+    // フォーカス時にも同期
+    window.addEventListener('focus', () => {
+        console.log('ウィンドウがフォーカスされました。同期を開始します。');
+        syncData();
     });
 
     console.log('初期化完了');
@@ -991,6 +998,24 @@ function setupModalListeners() {
 
         // モーダルを閉じる
         document.getElementById('eventModal').style.display = 'none';
+
+        // Supabaseに保存（バックグラウンド）
+        const savedEvent = editingEventId ?
+            events.find(e => e.id === editingEventId) :
+            eventData;
+
+        if (savedEvent) {
+            if (editingEventId) {
+                updateEventInSupabase(savedEvent).catch(err =>
+                    console.error('Supabase更新エラー:', err)
+                );
+            } else {
+                saveEventToSupabase(savedEvent).catch(err =>
+                    console.error('Supabase保存エラー:', err)
+                );
+            }
+        }
+
         editingEventId = null;
         console.log('Modal closed');
     });
@@ -1017,6 +1042,11 @@ function setupModalListeners() {
             // カレンダーを再描画
             renderCalendar();
             console.log('Calendar rendered after deletion');
+
+            // Supabaseから削除（バックグラウンド）
+            deleteEventFromSupabase(deletedId).catch(err =>
+                console.error('Supabase削除エラー:', err)
+            );
 
             // モーダルを閉じる
             document.getElementById('eventModal').style.display = 'none';
@@ -1087,6 +1117,23 @@ function setupModalListeners() {
         renderCalendar();
         console.log('Calendar rendered');
 
+        // Supabaseに保存（バックグラウンド）
+        const savedCampaign = window.editingCampaignId ?
+            events.find(e => e.id === window.editingCampaignId) :
+            events[events.length - 1];
+
+        if (savedCampaign) {
+            if (window.editingCampaignId) {
+                updateEventInSupabase(savedCampaign).catch(err =>
+                    console.error('Supabase更新エラー:', err)
+                );
+            } else {
+                saveEventToSupabase(savedCampaign).catch(err =>
+                    console.error('Supabase保存エラー:', err)
+                );
+            }
+        }
+
         // フォームをリセット
         document.getElementById('campaignForm').reset();
         document.getElementById('otherMemberName').style.display = 'none';
@@ -1142,6 +1189,11 @@ function setupModalListeners() {
             // カレンダーを再描画
             renderCalendar();
             console.log('Calendar rendered after campaign deletion');
+
+            // Supabaseから削除（バックグラウンド）
+            deleteEventFromSupabase(deletedId).catch(err =>
+                console.error('Supabase削除エラー:', err)
+            );
 
             // モーダルを閉じる
             document.getElementById('campaignModal').style.display = 'none';
@@ -1349,8 +1401,11 @@ async function saveEventToSupabase(event) {
             throw error;
         } else {
             console.log('保存成功:', data);
-            // 保存後すぐに同期
-            setTimeout(() => syncData(), 500);
+            // 保存成功後、他端末への反映を促すため少し待ってから同期
+            setTimeout(() => {
+                console.log('保存後の同期を実行');
+                syncData();
+            }, 1000);
         }
 
     } catch (error) {
