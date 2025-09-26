@@ -15,7 +15,7 @@ let staffMembers = [];
 let editingEventId = null;
 
 // 同期設定（ミリ秒単位）
-const SYNC_INTERVAL = 15000; // 15秒固定
+const SYNC_INTERVAL = 10000; // 10秒ごとの自動同期
 
 // ===================================
 // モバイルデバイス検出
@@ -50,12 +50,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Supabaseから最新データを取得
     await syncData();
 
-    // 定期同期を設定（15秒ごと）
+    // 定期同期を設定（10秒ごと）
     setInterval(() => {
-        console.log('定期同期実行 (間隔: 15秒)');
+        console.log('定期同期実行 (間隔: 10秒)');
         syncData();
     }, SYNC_INTERVAL);
-    console.log('自動同期を15秒間隔で開始');
+    console.log('自動同期を10秒間隔で開始');
 
     // ページ表示時に強制同期
     document.addEventListener('visibilitychange', () => {
@@ -1280,9 +1280,12 @@ async function syncData() {
             if (syncStatus) {
                 syncStatus.textContent = '';
             }
-        } else if (eventData && eventData.length > 0) {
-            // Supabaseのデータを優先（完全置き換え）
-            events = eventData.map(e => ({
+        } else if (eventData) {
+            // 現在のデータと比較
+            const currentEventsJson = JSON.stringify(events.sort((a,b) => a.id.localeCompare(b.id)));
+
+            // Supabaseのデータをマージ
+            const newEvents = eventData.map(e => ({
                 id: e.event_id || e.id.toString(),
                 date: e.date,
                 person: e.person,
@@ -1294,8 +1297,37 @@ async function syncData() {
                 campaignMembers: e.campaign_members
             }));
 
-            saveEvents();
-            renderCalendar();
+            // ローカルのみに存在するイベントも保持
+            events.forEach(localEvent => {
+                if (!newEvents.find(e => e.id === localEvent.id)) {
+                    // ローカルにしかないイベントはSupabaseに保存
+                    saveEventToSupabase(localEvent).catch(err =>
+                        console.error('ローカルイベントの同期エラー:', err)
+                    );
+                    newEvents.push(localEvent);
+                }
+            });
+
+            const newEventsJson = JSON.stringify(newEvents.sort((a,b) => a.id.localeCompare(b.id)));
+
+            // データが変更された場合のみ更新
+            if (currentEventsJson !== newEventsJson) {
+                console.log('データ変更を検知 - カレンダーを自動更新');
+                events = newEvents;
+                saveEvents();
+                renderCalendar();
+
+                // 変更通知
+                const syncStatus = document.getElementById('syncStatus');
+                if (syncStatus) {
+                    syncStatus.textContent = '📥 更新されました';
+                    setTimeout(() => {
+                        syncStatus.textContent = '';
+                    }, 3000);
+                }
+            } else {
+                console.log('データ変更なし - カレンダー更新不要');
+            }
         }
 
         // スタッフデータを取得
@@ -1408,11 +1440,11 @@ async function saveEventToSupabase(event) {
             throw error;
         } else {
             console.log('保存成功:', data);
-            // 保存成功後、他端末への反映を促すため少し待ってから同期
+            // 保存成功後、即座に同期を実行（他端末への反映を早める）
             setTimeout(() => {
                 console.log('保存後の同期を実行');
                 syncData();
-            }, 1000);
+            }, 500);
         }
 
     } catch (error) {
