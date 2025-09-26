@@ -936,45 +936,43 @@ function setupModalListeners() {
     document.getElementById('eventForm').addEventListener('submit', (e) => {
         e.preventDefault();
 
-        try {
-            const eventData = {
-                date: document.getElementById('eventDate').value,
-                person: document.getElementById('eventPerson').value,
-                title: document.getElementById('eventTitle').value,
-                time: document.getElementById('eventTime').value,
-                color: document.getElementById('eventColor').value,
-                note: document.getElementById('eventNote').value,
-                isCampaign: false
-            };
+        const eventData = {
+            date: document.getElementById('eventDate').value,
+            person: document.getElementById('eventPerson').value,
+            title: document.getElementById('eventTitle').value,
+            time: document.getElementById('eventTime').value,
+            color: document.getElementById('eventColor').value,
+            note: document.getElementById('eventNote').value,
+            isCampaign: false
+        };
 
-            if (editingEventId) {
-                // 更新
-                const index = events.findIndex(e => e.id === editingEventId);
-                if (index !== -1) {
-                    events[index] = { ...events[index], ...eventData };
-                }
-            } else {
-                // 新規作成
-                eventData.id = Date.now().toString();
-                events.push(eventData);
+        if (editingEventId) {
+            // 更新
+            const index = events.findIndex(e => e.id === editingEventId);
+            if (index !== -1) {
+                events[index] = { ...events[index], ...eventData };
             }
+        } else {
+            // 新規作成
+            eventData.id = Date.now().toString();
+            events.push(eventData);
+        }
 
-            // ローカル保存とカレンダー更新
-            saveEvents();
-            renderCalendar();
+        // ローカル保存とカレンダー更新
+        saveEvents();
+        renderCalendar();
 
-            // モーダルを閉じる
-            document.getElementById('eventModal').style.display = 'none';
+        // モーダルを閉じる
+        document.getElementById('eventModal').style.display = 'none';
 
-            // Supabase同期（バックグラウンド）
-            if (editingEventId) {
-                updateEventInSupabase(events.find(e => e.id === editingEventId)).catch(() => {});
-            } else {
-                saveEventToSupabase(eventData).catch(() => {});
+        // Supabase同期（バックグラウンド）
+        if (editingEventId) {
+            const event = events.find(e => e.id === editingEventId);
+            if (event) {
+                updateEventInSupabase(event).catch(() => {});
             }
-        } catch (error) {
-            console.error('イベント保存エラー:', error);
-            alert('保存に失敗しました');
+        } else {
+            saveEventToSupabase(eventData).catch(() => {});
         }
     });
 
@@ -983,25 +981,21 @@ function setupModalListeners() {
         if (!editingEventId) return;
 
         if (confirm('このイベントを削除しますか？')) {
-            try {
-                // 削除実行
-                events = events.filter(e => e.id !== editingEventId);
+            // 削除実行
+            const deletedId = editingEventId;
+            events = events.filter(e => e.id !== deletedId);
 
-                // ローカル保存とカレンダー更新
-                saveEvents();
-                renderCalendar();
+            // ローカル保存とカレンダー更新
+            saveEvents();
+            renderCalendar();
 
-                // モーダルを閉じる
-                document.getElementById('eventModal').style.display = 'none';
+            // モーダルを閉じる
+            document.getElementById('eventModal').style.display = 'none';
 
-                // Supabase削除（バックグラウンド）
-                deleteEventFromSupabase(editingEventId).catch(() => {});
+            // Supabase削除（バックグラウンド）
+            deleteEventFromSupabase(deletedId).catch(() => {});
 
-                editingEventId = null;
-            } catch (error) {
-                console.error('イベント削除エラー:', error);
-                alert('削除に失敗しました');
-            }
+            editingEventId = null;
         }
     });
 
@@ -1009,7 +1003,6 @@ function setupModalListeners() {
     document.getElementById('campaignForm').addEventListener('submit', (e) => {
         e.preventDefault();
 
-        try {
             // メンバー収集
             const members = [];
             document.querySelectorAll('#campaignMembers input:checked').forEach(cb => {
@@ -1074,10 +1067,6 @@ function setupModalListeners() {
             }
 
             window.editingCampaignId = null;
-        } catch (error) {
-            console.error('特拡保存エラー:', error);
-            alert('保存に失敗しました');
-        }
     });
 
     // その他チェックボックスの処理
@@ -1107,27 +1096,22 @@ function setupModalListeners() {
         if (!window.editingCampaignId) return;
 
         if (confirm('この特拡を削除しますか？')) {
-            try {
-                const deletedId = window.editingCampaignId;
+            const deletedId = window.editingCampaignId;
 
-                // 削除実行
-                events = events.filter(e => e.id !== deletedId);
+            // 削除実行
+            events = events.filter(e => e.id !== deletedId);
 
-                // ローカル保存とカレンダー更新
-                saveEvents();
-                renderCalendar();
+            // ローカル保存とカレンダー更新
+            saveEvents();
+            renderCalendar();
 
-                // モーダルを閉じる
-                document.getElementById('campaignModal').style.display = 'none';
+            // モーダルを閉じる
+            document.getElementById('campaignModal').style.display = 'none';
 
-                // Supabase削除（バックグラウンド）
-                deleteEventFromSupabase(deletedId).catch(() => {});
+            // Supabase削除（バックグラウンド）
+            deleteEventFromSupabase(deletedId).catch(() => {});
 
-                window.editingCampaignId = null;
-            } catch (error) {
-                console.error('特拡削除エラー:', error);
-                alert('削除に失敗しました');
-            }
+            window.editingCampaignId = null;
         }
     });
 }
