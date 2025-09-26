@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>同期問題デバッグツール</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: -apple-system, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #dc3545;
+            padding-bottom: 10px;
+        }
+        .section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .danger-btn {
+            background: #dc3545;
+        }
+        .danger-btn:hover {
+            background: #c82333;
+        }
+        .success-btn {
+            background: #28a745;
+        }
+        .success-btn:hover {
+            background: #218838;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .data-display {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .event-item {
+            background: white;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .deleted {
+            background: #ffebee;
+            border-left-color: #dc3545;
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .log-entry {
+            padding: 5px;
+            margin: 2px 0;
+            border-radius: 3px;
+        }
+        .log-error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .log-success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .log-info {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 同期問題デバッグツール</h1>
+
+    <div class="section">
+        <h2>1. 接続状態の確認</h2>
+        <button onclick="checkConnection()">Supabase接続テスト</button>
+        <button onclick="testLocalStorage()">LocalStorage確認</button>
+        <div id="connectionStatus" class="status info">待機中...</div>
+    </div>
+
+    <div class="section">
+        <h2>2. データの状態確認</h2>
+        <button onclick="compareData()">ローカル vs Supabase 比較</button>
+        <button onclick="showDeletedItems()">削除済みアイテム表示</button>
+        <button onclick="showConflicts()">競合データ検出</button>
+        <div id="dataComparison" class="data-display"></div>
+    </div>
+
+    <div class="section">
+        <h2>3. 同期テスト</h2>
+        <button onclick="testDelete()">削除テスト実行</button>
+        <button onclick="forceSync()">強制同期</button>
+        <button onclick="monitorSync()">リアルタイム監視開始</button>
+        <div id="syncLog" class="data-display"></div>
+    </div>
+
+    <div class="section">
+        <h2>4. データ修復</h2>
+        <p style="color: red;">⚠️ 以下の操作は元に戻せません！</p>
+        <button class="danger-btn" onclick="clearLocalOnly()">ローカルデータのみクリア</button>
+        <button class="danger-btn" onclick="clearSupabaseOnly()">Supabaseデータのみクリア</button>
+        <button class="danger-btn" onclick="fullReset()">完全リセット</button>
+        <button class="success-btn" onclick="syncFromSupabase()">Supabaseから復元</button>
+        <button class="success-btn" onclick="syncToSupabase()">ローカルをSupabaseに上書き</button>
+        <div id="repairStatus" class="status info">待機中...</div>
+    </div>
+
+    <div class="section">
+        <h2>5. 詳細ログ</h2>
+        <button onclick="clearLogs()">ログクリア</button>
+        <div id="detailLog" class="data-display" style="font-family: monospace; font-size: 12px;"></div>
+    </div>
+
+    <script>
+        // Supabase設定
+        const SUPABASE_URL = 'https://igjkroqjhwhewtrprhds.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlnamtyb3FqaHdoZXd0cnByaGRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyNTQ5ODEsImV4cCI6MjA3MzgzMDk4MX0.7pD4mWSbr8FvGKIjkNSrQuLdUPISxayZGANZ27TuqzI';
+        const USER_ID = 'global_user';
+
+        let supabase = null;
+        let monitoringInterval = null;
+
+        // 初期化
+        function init() {
+            try {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                addLog('Supabaseクライアント初期化成功', 'success');
+            } catch (error) {
+                addLog('Supabase初期化エラー: ' + error.message, 'error');
+            }
+        }
+
+        // ログ追加
+        function addLog(message, type = 'info') {
+            const logDiv = document.getElementById('detailLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        // 接続テスト
+        async function checkConnection() {
+            const status = document.getElementById('connectionStatus');
+            status.className = 'status warning';
+            status.textContent = '接続テスト中...';
+
+            try {
+                const { data, error } = await supabase
+                    .from('schedule_events')
+                    .select('count')
+                    .eq('user_id', USER_ID)
+                    .single();
+
+                if (error) throw error;
+
+                status.className = 'status success';
+                status.textContent = `✅ Supabase接続成功`;
+                addLog('Supabase接続テスト成功', 'success');
+            } catch (error) {
+                status.className = 'status error';
+                status.textContent = `❌ 接続エラー: ${error.message}`;
+                addLog('Supabase接続エラー: ' + error.message, 'error');
+            }
+        }
+
+        // LocalStorageテスト
+        function testLocalStorage() {
+            const status = document.getElementById('connectionStatus');
+            try {
+                const events = JSON.parse(localStorage.getItem('scheduleEvents') || '[]');
+                const staff = JSON.parse(localStorage.getItem('staffMembers') || '[]');
+
+                status.className = 'status success';
+                status.textContent = `✅ LocalStorage正常: イベント${events.length}件, スタッフ${staff.length}名`;
+                addLog(`LocalStorage: イベント${events.length}件, スタッフ${staff.length}名`, 'success');
+            } catch (error) {
+                status.className = 'status error';
+                status.textContent = `❌ LocalStorageエラー: ${error.message}`;
+                addLog('LocalStorageエラー: ' + error.message, 'error');
+            }
+        }
+
+        // データ比較
+        async function compareData() {
+            const compDiv = document.getElementById('dataComparison');
+            compDiv.innerHTML = '<h3>データ比較中...</h3>';
+
+            try {
+                // ローカルデータ
+                const localEvents = JSON.parse(localStorage.getItem('scheduleEvents') || '[]');
+
+                // Supabaseデータ
+                const { data: supabaseEvents, error } = await supabase
+                    .from('schedule_events')
+                    .select('*')
+                    .eq('user_id', USER_ID);
+
+                if (error) throw error;
+
+                // 比較結果表示
+                let html = '<h3>📊 データ比較結果</h3>';
+                html += `<p><strong>ローカル:</strong> ${localEvents.length}件</p>`;
+                html += `<p><strong>Supabase:</strong> ${supabaseEvents.length}件</p>`;
+
+                // IDのセット作成
+                const localIds = new Set(localEvents.map(e => String(e.id)));
+                const supabaseIds = new Set(supabaseEvents.map(e => String(e.event_id)));
+
+                // ローカルのみ
+                const localOnly = localEvents.filter(e => !supabaseIds.has(String(e.id)));
+                if (localOnly.length > 0) {
+                    html += '<h4>🔵 ローカルのみ存在:</h4>';
+                    localOnly.forEach(e => {
+                        html += `<div class="event-item">${e.date} - ${e.title || '(タイトルなし)'} (ID: ${e.id})</div>`;
+                    });
+                }
+
+                // Supabaseのみ
+                const supabaseOnly = supabaseEvents.filter(e => !localIds.has(String(e.event_id)));
+                if (supabaseOnly.length > 0) {
+                    html += '<h4>🟢 Supabaseのみ存在:</h4>';
+                    supabaseOnly.forEach(e => {
+                        html += `<div class="event-item">${e.date} - ${e.title || '(タイトルなし)'} (ID: ${e.event_id})</div>`;
+                    });
+                }
+
+                // 両方に存在
+                const common = localEvents.filter(e => supabaseIds.has(String(e.id)));
+                html += `<h4>🔄 両方に存在: ${common.length}件</h4>`;
+
+                compDiv.innerHTML = html;
+                addLog('データ比較完了', 'success');
+
+            } catch (error) {
+                compDiv.innerHTML = `<p class="error">比較エラー: ${error.message}</p>`;
+                addLog('データ比較エラー: ' + error.message, 'error');
+            }
+        }
+
+        // 削除テスト
+        async function testDelete() {
+            const logDiv = document.getElementById('syncLog');
+            logDiv.innerHTML = '<h3>削除テスト実行中...</h3>';
+
+            try {
+                // テストイベント作成
+                const testEvent = {
+                    id: 'test_' + Date.now(),
+                    date: new Date().toISOString().split('T')[0],
+                    title: '削除テスト用イベント',
+                    person: 'staff-0',
+                    color: '#FF0000'
+                };
+
+                // ローカルに追加
+                const events = JSON.parse(localStorage.getItem('scheduleEvents') || '[]');
+                events.push(testEvent);
+                localStorage.setItem('scheduleEvents', JSON.stringify(events));
+                logDiv.innerHTML += '<p>✅ ローカルに追加</p>';
+
+                // Supabaseに追加
+                const { error: insertError } = await supabase
+                    .from('schedule_events')
+                    .insert({
+                        user_id: USER_ID,
+                        event_id: testEvent.id,
+                        title: testEvent.title,
+                        date: testEvent.date,
+                        person: testEvent.person,
+                        color: testEvent.color
+                    });
+
+                if (insertError) throw insertError;
+                logDiv.innerHTML += '<p>✅ Supabaseに追加</p>';
+
+                // 3秒待機
+                await new Promise(resolve => setTimeout(resolve, 3000));
+
+                // ローカルから削除
+                const updatedEvents = events.filter(e => e.id !== testEvent.id);
+                localStorage.setItem('scheduleEvents', JSON.stringify(updatedEvents));
+                logDiv.innerHTML += '<p>✅ ローカルから削除</p>';
+
+                // Supabaseから削除
+                const { error: deleteError } = await supabase
+                    .from('schedule_events')
+                    .delete()
+                    .eq('event_id', testEvent.id)
+                    .eq('user_id', USER_ID);
+
+                if (deleteError) throw deleteError;
+                logDiv.innerHTML += '<p>✅ Supabaseから削除</p>';
+
+                // 確認
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                const finalEvents = JSON.parse(localStorage.getItem('scheduleEvents') || '[]');
+                const testExists = finalEvents.some(e => e.id === testEvent.id);
+
+                if (testExists) {
+                    logDiv.innerHTML += '<p class="error">❌ 削除失敗: イベントが残存</p>';
+                    addLog('削除テスト失敗: イベントが残存', 'error');
+                } else {
+                    logDiv.innerHTML += '<p class="success">✅ 削除テスト成功</p>';
+                    addLog('削除テスト成功', 'success');
+                }
+
+            } catch (error) {
+                logDiv.innerHTML += `<p class="error">❌ テストエラー: ${error.message}</p>`;
+                addLog('削除テストエラー: ' + error.message, 'error');
+            }
+        }
+
+        // 強制同期
+        async function forceSync() {
+            const logDiv = document.getElementById('syncLog');
+            logDiv.innerHTML = '<h3>強制同期実行中...</h3>';
+
+            try {
+                // Supabaseから取得
+                const { data: supabaseEvents, error } = await supabase
+                    .from('schedule_events')
+                    .select('*')
+                    .eq('user_id', USER_ID);
+
+                if (error) throw error;
+
+                // ローカルを完全に置き換え
+                const events = supabaseEvents.map(e => ({
+                    id: String(e.event_id),
+                    date: e.date,
+                    person: e.person,
+                    title: e.title,
+                    time: e.time,
+                    color: e.color,
+                    note: e.note,
+                    isCampaign: e.is_campaign,
+                    campaignMembers: e.campaign_members
+                }));
+
+                localStorage.setItem('scheduleEvents', JSON.stringify(events));
+                logDiv.innerHTML += `<p class="success">✅ 強制同期完了: ${events.length}件</p>`;
+                addLog(`強制同期完了: ${events.length}件`, 'success');
+
+                // メインアプリのカレンダーを再描画
+                if (window.opener && window.opener.renderCalendar) {
+                    window.opener.renderCalendar();
+                    logDiv.innerHTML += '<p class="success">✅ カレンダー再描画</p>';
+                }
+
+            } catch (error) {
+                logDiv.innerHTML += `<p class="error">❌ 同期エラー: ${error.message}</p>`;
+                addLog('強制同期エラー: ' + error.message, 'error');
+            }
+        }
+
+        // データクリア系
+        async function clearLocalOnly() {
+            if (confirm('本当にローカルデータをクリアしますか？')) {
+                localStorage.removeItem('scheduleEvents');
+                localStorage.removeItem('staffMembers');
+                document.getElementById('repairStatus').className = 'status success';
+                document.getElementById('repairStatus').textContent = '✅ ローカルデータをクリアしました';
+                addLog('ローカルデータクリア完了', 'success');
+            }
+        }
+
+        async function clearSupabaseOnly() {
+            if (confirm('本当にSupabaseデータをクリアしますか？')) {
+                try {
+                    const { error } = await supabase
+                        .from('schedule_events')
+                        .delete()
+                        .eq('user_id', USER_ID);
+
+                    if (error) throw error;
+
+                    document.getElementById('repairStatus').className = 'status success';
+                    document.getElementById('repairStatus').textContent = '✅ Supabaseデータをクリアしました';
+                    addLog('Supabaseデータクリア完了', 'success');
+                } catch (error) {
+                    document.getElementById('repairStatus').className = 'status error';
+                    document.getElementById('repairStatus').textContent = `❌ エラー: ${error.message}`;
+                    addLog('Supabaseクリアエラー: ' + error.message, 'error');
+                }
+            }
+        }
+
+        async function fullReset() {
+            if (confirm('本当にすべてのデータをリセットしますか？\nこの操作は元に戻せません！')) {
+                await clearLocalOnly();
+                await clearSupabaseOnly();
+                document.getElementById('repairStatus').textContent = '✅ 完全リセット完了';
+            }
+        }
+
+        async function syncFromSupabase() {
+            await forceSync();
+            document.getElementById('repairStatus').className = 'status success';
+            document.getElementById('repairStatus').textContent = '✅ Supabaseから復元しました';
+        }
+
+        async function syncToSupabase() {
+            if (confirm('ローカルデータでSupabaseを上書きしますか？')) {
+                try {
+                    // まずSupabaseをクリア
+                    await supabase
+                        .from('schedule_events')
+                        .delete()
+                        .eq('user_id', USER_ID);
+
+                    // ローカルデータを取得
+                    const events = JSON.parse(localStorage.getItem('scheduleEvents') || '[]');
+
+                    // Supabaseに保存
+                    for (const event of events) {
+                        await supabase
+                            .from('schedule_events')
+                            .insert({
+                                user_id: USER_ID,
+                                event_id: event.id,
+                                title: event.title,
+                                date: event.date,
+                                time: event.time,
+                                person: event.person,
+                                color: event.color,
+                                note: event.note,
+                                is_campaign: event.isCampaign,
+                                campaign_members: event.campaignMembers
+                            });
+                    }
+
+                    document.getElementById('repairStatus').className = 'status success';
+                    document.getElementById('repairStatus').textContent = `✅ ${events.length}件をSupabaseに保存しました`;
+                    addLog(`Supabaseに${events.length}件保存完了`, 'success');
+                } catch (error) {
+                    document.getElementById('repairStatus').className = 'status error';
+                    document.getElementById('repairStatus').textContent = `❌ エラー: ${error.message}`;
+                    addLog('Supabase保存エラー: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // リアルタイム監視
+        function monitorSync() {
+            if (monitoringInterval) {
+                clearInterval(monitoringInterval);
+                monitoringInterval = null;
+                document.getElementById('syncLog').innerHTML += '<p>監視停止</p>';
+                return;
+            }
+
+            document.getElementById('syncLog').innerHTML = '<h3>リアルタイム監視中...</h3>';
+
+            monitoringInterval = setInterval(async () => {
+                const localEvents = JSON.parse(localStorage.getItem('scheduleEvents') || '[]');
+                const { data: supabaseEvents } = await supabase
+                    .from('schedule_events')
+                    .select('*')
+                    .eq('user_id', USER_ID);
+
+                const status = `Local: ${localEvents.length} | Supabase: ${supabaseEvents?.length || 0} | ${new Date().toLocaleTimeString()}`;
+                document.getElementById('syncLog').innerHTML = `<h3>リアルタイム監視中...</h3><p>${status}</p>`;
+            }, 2000);
+        }
+
+        // ログクリア
+        function clearLogs() {
+            document.getElementById('detailLog').innerHTML = '';
+        }
+
+        // 削除済みアイテム表示
+        function showDeletedItems() {
+            // 実装は省略（履歴機能が必要）
+            document.getElementById('dataComparison').innerHTML = '<p>削除履歴機能は未実装です</p>';
+        }
+
+        // 競合検出
+        function showConflicts() {
+            // 実装は省略（タイムスタンプ比較が必要）
+            document.getElementById('dataComparison').innerHTML = '<p>競合検出機能は未実装です</p>';
+        }
+
+        // 初期化実行
+        init();
+    </script>
+</body>
+</html>

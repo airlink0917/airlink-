@@ -51,24 +51,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     await syncData();
 
     // 定期同期を設定（10秒ごと）
-    setInterval(() => {
+    setInterval(async () => {
         console.log('定期同期実行 (間隔: 10秒)');
-        syncData();
+        await syncData();
     }, SYNC_INTERVAL);
     console.log('自動同期を10秒間隔で開始');
 
     // ページ表示時に強制同期
-    document.addEventListener('visibilitychange', () => {
+    document.addEventListener('visibilitychange', async () => {
         if (!document.hidden) {
             console.log('ページが表示されました。同期を開始します。');
-            syncData();
+            await syncData();
         }
     });
 
     // フォーカス時にも同期
-    window.addEventListener('focus', () => {
+    window.addEventListener('focus', async () => {
         console.log('ウィンドウがフォーカスされました。同期を開始します。');
-        syncData();
+        await syncData();
     });
 
     console.log('初期化完了');
@@ -1036,7 +1036,7 @@ function setupModalListeners() {
     });
 
     // イベント削除
-    document.getElementById('deleteEvent').addEventListener('click', function(e) {
+    document.getElementById('deleteEvent').addEventListener('click', async function(e) {
         e.preventDefault();
         e.stopPropagation();
 
@@ -1053,6 +1053,15 @@ function setupModalListeners() {
             const deletedId = editingEventId;
             console.log('Deleting event with ID:', deletedId);
             console.log('Current events:', events.map(e => ({ id: e.id, title: e.title })));
+
+            // まずSupabaseから削除（同期的に待機）
+            try {
+                await deleteEventFromSupabase(deletedId);
+                console.log('Supabaseから削除完了');
+            } catch (err) {
+                console.error('Supabase削除エラー:', err);
+                // エラーでも続行
+            }
 
             const beforeLength = events.length;
             // IDの型を統一して比較（文字列として比較）
@@ -1081,12 +1090,6 @@ function setupModalListeners() {
             // カレンダーを即座に再描画
             renderCalendar();
             console.log('Calendar re-rendered immediately after deletion');
-
-            // Supabaseから削除（非同期で実行、待機しない）
-            deleteEventFromSupabase(deletedId).catch(err => {
-                console.error('Supabase削除エラー:', err);
-                // エラーでもローカル削除は維持
-            });
 
             // モーダルを閉じる
             document.getElementById('eventModal').style.display = 'none';
@@ -1218,7 +1221,7 @@ function setupModalListeners() {
     });
 
     // 特拡削除ボタン
-    document.getElementById('deleteCampaign').addEventListener('click', function(e) {
+    document.getElementById('deleteCampaign').addEventListener('click', async function(e) {
         e.preventDefault();
         e.stopPropagation();
 
@@ -1232,6 +1235,15 @@ function setupModalListeners() {
 
         if (confirm('この特拡を削除しますか？')) {
             const deletedId = window.editingCampaignId;
+
+            // まずSupabaseから削除（同期的に待機）
+            try {
+                await deleteEventFromSupabase(deletedId);
+                console.log('Supabaseから特拡削除完了');
+            } catch (err) {
+                console.error('Supabase削除エラー:', err);
+                // エラーでも続行
+            }
 
             const beforeLength = events.length;
 
@@ -1261,12 +1273,6 @@ function setupModalListeners() {
             // カレンダーを即座に再描画
             renderCalendar();
             console.log('Calendar re-rendered immediately after campaign deletion');
-
-            // Supabaseから削除（非同期で実行、待機しない）
-            deleteEventFromSupabase(deletedId).catch(err => {
-                console.error('Supabase削除エラー:', err);
-                // エラーでもローカル削除は維持
-            });
 
             // モーダルを閉じる
             document.getElementById('campaignModal').style.display = 'none';
