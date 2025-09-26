@@ -13,6 +13,7 @@ let currentDate = new Date();
 let events = [];
 let staffMembers = [];
 let editingEventId = null;
+let isDeleting = false; // 削除中フラグ
 
 // 同期設定（ミリ秒単位）
 const SYNC_INTERVAL = 10000; // 10秒ごとの自動同期
@@ -1054,6 +1055,9 @@ function setupModalListeners() {
             console.log('Deleting event with ID:', deletedId);
             console.log('Current events:', events.map(e => ({ id: e.id, title: e.title })));
 
+            // 削除中フラグを立てる
+            isDeleting = true;
+
             const beforeLength = events.length;
             // IDの型を統一して比較（文字列として比較）
             events = events.filter(e => {
@@ -1078,14 +1082,24 @@ function setupModalListeners() {
             console.log('Events saved to localStorage');
             console.log('Remaining events:', events.length);
 
-            // カレンダーを再描画
-            renderCalendar();
-            console.log('Calendar re-rendered');
-
-            // Supabaseから削除（バックグラウンド）
-            deleteEventFromSupabase(deletedId).catch(err =>
-                console.error('Supabase削除エラー:', err)
-            );
+            // Supabaseから先に削除（同期で古いデータが戻らないように）
+            deleteEventFromSupabase(deletedId)
+                .then(() => {
+                    console.log('Supabase deletion successful');
+                    // Supabase削除成功後にカレンダーを再描画
+                    renderCalendar();
+                    console.log('Calendar re-rendered after Supabase deletion');
+                    // 削除フラグをリセット
+                    isDeleting = false;
+                })
+                .catch(err => {
+                    console.error('Supabase削除エラー:', err);
+                    // エラーがあってもカレンダーは更新
+                    renderCalendar();
+                    console.log('Calendar re-rendered despite Supabase error');
+                    // 削除フラグをリセット
+                    isDeleting = false;
+                });
 
             // モーダルを閉じる
             document.getElementById('eventModal').style.display = 'none';
@@ -1231,6 +1245,10 @@ function setupModalListeners() {
 
         if (confirm('この特拡を削除しますか？')) {
             const deletedId = window.editingCampaignId;
+
+            // 削除中フラグを立てる
+            isDeleting = true;
+
             const beforeLength = events.length;
 
             // 削除実行（IDの型を統一して比較）
@@ -1256,14 +1274,24 @@ function setupModalListeners() {
             localStorage.setItem('scheduleEvents', JSON.stringify(events));
             console.log('Events saved to localStorage');
 
-            // カレンダーを再描画
-            renderCalendar();
-            console.log('Calendar updated');
-
-            // Supabaseから削除（バックグラウンド）
-            deleteEventFromSupabase(deletedId).catch(err =>
-                console.error('Supabase削除エラー:', err)
-            );
+            // Supabaseから先に削除（同期で古いデータが戻らないように）
+            deleteEventFromSupabase(deletedId)
+                .then(() => {
+                    console.log('Supabase campaign deletion successful');
+                    // Supabase削除成功後にカレンダーを再描画
+                    renderCalendar();
+                    console.log('Calendar re-rendered after campaign deletion');
+                    // 削除フラグをリセット
+                    isDeleting = false;
+                })
+                .catch(err => {
+                    console.error('Supabase削除エラー:', err);
+                    // エラーがあってもカレンダーは更新
+                    renderCalendar();
+                    console.log('Calendar re-rendered despite error');
+                    // 削除フラグをリセット
+                    isDeleting = false;
+                });
 
             // モーダルを閉じる
             document.getElementById('campaignModal').style.display = 'none';
@@ -1337,6 +1365,12 @@ function loadStaffMembers() {
 // Supabase同期
 // ===================================
 async function syncData() {
+    // 削除中は同期をスキップ
+    if (isDeleting) {
+        console.log('削除処理中のため同期をスキップ');
+        return;
+    }
+
     if (!supabase) {
         console.error('同期エラー: Supabaseが初期化されていません');
         const syncStatus = document.getElementById('syncStatus');
