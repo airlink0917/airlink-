@@ -1049,63 +1049,56 @@ function setupModalListeners() {
         }
 
         if (confirm('このイベントを削除しますか？')) {
-            // 削除実行
-            const deletedId = editingEventId;
-            console.log('Deleting event with ID:', deletedId);
-            console.log('Current events:', events.map(e => ({ id: e.id, title: e.title })));
+            const deletedId = String(editingEventId);
+            console.log('削除開始 - ID:', deletedId);
 
-            // まずSupabaseから削除（同期的に待機）
-            try {
-                await deleteEventFromSupabase(deletedId);
-                console.log('Supabaseから削除完了');
-            } catch (err) {
-                console.error('Supabase削除エラー:', err);
-                // エラーでも続行
-            }
-
+            // 1. ローカルから即座に削除
             const beforeLength = events.length;
-            // IDの型を統一して比較（文字列として比較）
-            events = events.filter(e => {
-                const match = String(e.id) === String(deletedId);
-                if (match) {
-                    console.log('Found event to delete:', e);
-                }
-                return !match;
-            });
+            events = events.filter(e => String(e.id) !== deletedId);
             const afterLength = events.length;
 
             if (beforeLength === afterLength) {
-                console.error('イベントが見つかりませんでした:', deletedId);
+                console.error('削除失敗: イベントが見つかりません');
                 alert('イベントの削除に失敗しました');
                 return;
             }
 
-            console.log(`Event deletion result: ${beforeLength} -> ${afterLength}`);
-
-            // データを保存
+            // 2. ローカルストレージを更新
             localStorage.setItem('scheduleEvents', JSON.stringify(events));
-            console.log('Events saved to localStorage');
-            console.log('Remaining events:', events.length);
+            console.log('ローカル削除完了:', beforeLength, '->', afterLength);
 
-            // カレンダーを即座に再描画
+            // 3. UIを即座に更新
             renderCalendar();
-            console.log('Calendar re-rendered immediately after deletion');
-
-            // モーダルを閉じる
             document.getElementById('eventModal').style.display = 'none';
             editingEventId = null;
-            console.log('Modal closed after deletion');
 
-            // 削除成功メッセージ
-            setTimeout(() => {
-                const syncStatus = document.getElementById('syncStatus');
-                if (syncStatus) {
-                    syncStatus.textContent = '✅ 削除しました';
-                    setTimeout(() => {
-                        syncStatus.textContent = '';
-                    }, 2000);
+            // 4. Supabaseから削除（完了を待つ）
+            try {
+                if (supabase) {
+                    const { error } = await supabase
+                        .from('schedule_events')
+                        .delete()
+                        .eq('event_id', deletedId)
+                        .eq('user_id', USER_ID);
+
+                    if (error) {
+                        console.error('Supabase削除エラー:', error);
+                    } else {
+                        console.log('Supabase削除成功:', deletedId);
+                    }
                 }
-            }, 100);
+            } catch (err) {
+                console.error('削除処理エラー:', err);
+            }
+
+            // 5. 削除完了メッセージ
+            const syncStatus = document.getElementById('syncStatus');
+            if (syncStatus) {
+                syncStatus.textContent = '✅ 削除しました';
+                setTimeout(() => {
+                    syncStatus.textContent = '';
+                }, 2000);
+            }
         }
     });
 
@@ -1234,61 +1227,56 @@ function setupModalListeners() {
         }
 
         if (confirm('この特拡を削除しますか？')) {
-            const deletedId = window.editingCampaignId;
+            const deletedId = String(window.editingCampaignId);
+            console.log('特拡削除開始 - ID:', deletedId);
 
-            // まずSupabaseから削除（同期的に待機）
-            try {
-                await deleteEventFromSupabase(deletedId);
-                console.log('Supabaseから特拡削除完了');
-            } catch (err) {
-                console.error('Supabase削除エラー:', err);
-                // エラーでも続行
-            }
-
+            // 1. ローカルから即座に削除
             const beforeLength = events.length;
-
-            // 削除実行（IDの型を統一して比較）
-            events = events.filter(e => {
-                const match = String(e.id) === String(deletedId);
-                if (match) {
-                    console.log('Found campaign to delete:', e);
-                }
-                return !match;
-            });
+            events = events.filter(e => String(e.id) !== deletedId);
             const afterLength = events.length;
 
             if (beforeLength === afterLength) {
-                console.error('特拡が見つかりませんでした:', deletedId);
-                console.error('Current events:', events.map(e => ({ id: e.id, title: e.title })));
+                console.error('削除失敗: 特拡が見つかりません');
                 alert('特拡の削除に失敗しました');
                 return;
             }
 
-            console.log(`Campaign deleted: ${deletedId}, events: ${beforeLength} -> ${afterLength}`);
-
-            // データを保存
+            // 2. ローカルストレージを更新
             localStorage.setItem('scheduleEvents', JSON.stringify(events));
-            console.log('Events saved to localStorage');
+            console.log('特拡ローカル削除完了:', beforeLength, '->', afterLength);
 
-            // カレンダーを即座に再描画
+            // 3. UIを即座に更新
             renderCalendar();
-            console.log('Calendar re-rendered immediately after campaign deletion');
-
-            // モーダルを閉じる
             document.getElementById('campaignModal').style.display = 'none';
             window.editingCampaignId = null;
-            console.log('Campaign modal closed after deletion');
 
-            // 削除成功メッセージ
-            setTimeout(() => {
-                const syncStatus = document.getElementById('syncStatus');
-                if (syncStatus) {
-                    syncStatus.textContent = '✅ 特拡を削除しました';
-                    setTimeout(() => {
-                        syncStatus.textContent = '';
-                    }, 2000);
+            // 4. Supabaseから削除（完了を待つ）
+            try {
+                if (supabase) {
+                    const { error } = await supabase
+                        .from('schedule_events')
+                        .delete()
+                        .eq('event_id', deletedId)
+                        .eq('user_id', USER_ID);
+
+                    if (error) {
+                        console.error('Supabase特拡削除エラー:', error);
+                    } else {
+                        console.log('Supabase特拡削除成功:', deletedId);
+                    }
                 }
-            }, 100);
+            } catch (err) {
+                console.error('特拡削除処理エラー:', err);
+            }
+
+            // 5. 削除完了メッセージ
+            const syncStatus = document.getElementById('syncStatus');
+            if (syncStatus) {
+                syncStatus.textContent = '✅ 特拡を削除しました';
+                setTimeout(() => {
+                    syncStatus.textContent = '';
+                }, 2000);
+            }
         }
     });
 }
@@ -1375,8 +1363,7 @@ async function syncData() {
                 syncStatus.textContent = '';
             }
         } else if (eventData !== null) {
-            // Supabaseのデータを真実の情報源として扱う
-            // Supabaseにあるデータのみを使用（ローカルのみのデータは破棄）
+            // Supabaseのデータを取得
             const supabaseEvents = eventData.map(e => ({
                 id: String(e.event_id || e.id),
                 date: e.date,
@@ -1389,17 +1376,34 @@ async function syncData() {
                 campaignMembers: e.campaign_members
             }));
 
-            // 現在のローカルデータと比較
-            const currentEventsJson = JSON.stringify(events.sort((a,b) => a.id.localeCompare(b.id)));
-            const newEventsJson = JSON.stringify(supabaseEvents.sort((a,b) => a.id.localeCompare(b.id)));
+            // ローカルのIDリストを作成
+            const localIds = new Set(events.map(e => String(e.id)));
+            const supabaseIds = new Set(supabaseEvents.map(e => String(e.id)));
 
-            // データが変更された場合のみ更新
-            if (currentEventsJson !== newEventsJson) {
-                console.log('データ変更を検知 - カレンダーを自動更新');
-                console.log('ローカルイベント数:', events.length, '→ Supabaseイベント数:', supabaseEvents.length);
+            // Supabaseにあるがローカルにないイベントを追加（他端末からの追加）
+            let hasChanges = false;
+            for (const event of supabaseEvents) {
+                if (!localIds.has(event.id)) {
+                    events.push(event);
+                    hasChanges = true;
+                    console.log('他端末から追加されたイベント:', event.id);
+                }
+            }
 
-                // Supabaseのデータで完全に置き換える
-                events = supabaseEvents;
+            // ローカルにあるがSupabaseにないイベントを削除（他端末で削除された）
+            const originalLength = events.length;
+            events = events.filter(e => {
+                const shouldKeep = supabaseIds.has(String(e.id));
+                if (!shouldKeep) {
+                    console.log('他端末で削除されたイベント:', e.id);
+                    hasChanges = true;
+                }
+                return shouldKeep;
+            });
+
+            // 変更があれば更新
+            if (hasChanges) {
+                console.log('同期による変更を検出');
                 saveEvents();
                 renderCalendar();
 
@@ -1412,7 +1416,7 @@ async function syncData() {
                     }, 3000);
                 }
             } else {
-                console.log('データ変更なし - カレンダー更新不要');
+                console.log('同期: 変更なし');
             }
         }
 
@@ -1556,30 +1560,7 @@ async function updateEventInSupabase(event) {
     }
 }
 
-async function deleteEventFromSupabase(eventId) {
-    if (!supabase) return;
-
-    try {
-        console.log('Supabaseから削除開始 - eventId:', eventId);
-
-        const { data, error } = await supabase
-            .from('schedule_events')
-            .delete()
-            .eq('event_id', String(eventId))
-            .eq('user_id', USER_ID);
-
-        if (error) {
-            console.error('Supabase削除エラー:', error);
-            // アラートは表示しない（UXを妨げない）
-        } else {
-            console.log('Supabaseから削除成功:', eventId);
-            // 削除成功後は同期を待たない（定期同期に任せる）
-        }
-
-    } catch (error) {
-        console.error('イベント削除エラー:', error);
-    }
-}
+// 削除関連の関数は削除ボタンのイベントリスナー内に統合
 
 async function saveStaffToSupabase() {
     if (!supabase) return;
