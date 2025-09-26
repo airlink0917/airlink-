@@ -854,10 +854,16 @@ function createEvent(date, staffIndex) {
 }
 
 function editEvent(eventId) {
+    console.log('editEvent called with ID:', eventId);
     const event = events.find(e => e.id === eventId);
-    if (!event) return;
+    if (!event) {
+        console.error('Event not found:', eventId);
+        return;
+    }
 
+    // 編集モード設定
     editingEventId = eventId;
+    console.log('editingEventId set to:', editingEventId);
     document.getElementById('eventDate').value = event.date;
     document.getElementById('eventPerson').value = event.person;
 
@@ -1025,27 +1031,40 @@ function setupModalListeners() {
     });
 
     // イベント削除
-    document.getElementById('deleteEvent').addEventListener('click', function() {
+    document.getElementById('deleteEvent').addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
         console.log('Delete button clicked, editingEventId:', editingEventId);
 
         if (!editingEventId) {
             console.log('No event to delete');
+            alert('削除するイベントが選択されていません');
             return;
         }
 
         if (confirm('このイベントを削除しますか？')) {
             // 削除実行
             const deletedId = editingEventId;
+            const beforeLength = events.length;
             events = events.filter(e => e.id !== deletedId);
-            console.log('Event deleted, remaining events:', events.length);
+            const afterLength = events.length;
+
+            if (beforeLength === afterLength) {
+                console.error('イベントが見つかりませんでした:', deletedId);
+                alert('イベントの削除に失敗しました');
+                return;
+            }
+
+            console.log(`Event deleted: ${deletedId}, events: ${beforeLength} -> ${afterLength}`);
 
             // データを保存
             localStorage.setItem('scheduleEvents', JSON.stringify(events));
-            console.log('Events saved after deletion');
+            console.log('Events saved to localStorage');
 
             // カレンダーを再描画
             renderCalendar();
-            console.log('Calendar rendered after deletion');
+            console.log('Calendar updated');
 
             // Supabaseから削除（バックグラウンド）
             deleteEventFromSupabase(deletedId).catch(err =>
@@ -1056,6 +1075,17 @@ function setupModalListeners() {
             document.getElementById('eventModal').style.display = 'none';
             editingEventId = null;
             console.log('Modal closed after deletion');
+
+            // 削除成功メッセージ
+            setTimeout(() => {
+                const syncStatus = document.getElementById('syncStatus');
+                if (syncStatus) {
+                    syncStatus.textContent = '✅ 削除しました';
+                    setTimeout(() => {
+                        syncStatus.textContent = '';
+                    }, 2000);
+                }
+            }, 100);
         }
     });
 
@@ -1171,28 +1201,41 @@ function setupModalListeners() {
     });
 
     // 特拡削除ボタン
-    document.getElementById('deleteCampaign').addEventListener('click', function() {
+    document.getElementById('deleteCampaign').addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
         console.log('Delete campaign clicked, editingCampaignId:', window.editingCampaignId);
 
         if (!window.editingCampaignId) {
             console.log('No campaign to delete');
+            alert('削除する特拡が選択されていません');
             return;
         }
 
         if (confirm('この特拡を削除しますか？')) {
             const deletedId = window.editingCampaignId;
+            const beforeLength = events.length;
 
             // 削除実行
             events = events.filter(e => e.id !== deletedId);
-            console.log('Campaign deleted, remaining events:', events.length);
+            const afterLength = events.length;
+
+            if (beforeLength === afterLength) {
+                console.error('特拡が見つかりませんでした:', deletedId);
+                alert('特拡の削除に失敗しました');
+                return;
+            }
+
+            console.log(`Campaign deleted: ${deletedId}, events: ${beforeLength} -> ${afterLength}`);
 
             // データを保存
             localStorage.setItem('scheduleEvents', JSON.stringify(events));
-            console.log('Events saved after campaign deletion');
+            console.log('Events saved to localStorage');
 
             // カレンダーを再描画
             renderCalendar();
-            console.log('Calendar rendered after campaign deletion');
+            console.log('Calendar updated');
 
             // Supabaseから削除（バックグラウンド）
             deleteEventFromSupabase(deletedId).catch(err =>
@@ -1203,6 +1246,17 @@ function setupModalListeners() {
             document.getElementById('campaignModal').style.display = 'none';
             window.editingCampaignId = null;
             console.log('Campaign modal closed after deletion');
+
+            // 削除成功メッセージ
+            setTimeout(() => {
+                const syncStatus = document.getElementById('syncStatus');
+                if (syncStatus) {
+                    syncStatus.textContent = '✅ 特拡を削除しました';
+                    setTimeout(() => {
+                        syncStatus.textContent = '';
+                    }, 2000);
+                }
+            }, 100);
         }
     });
 }
