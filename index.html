@@ -20,6 +20,8 @@
                 <button id="prevMonth">＜前月</button>
                 <span id="currentMonth"></span>
                 <button id="nextMonth">次月＞</button>
+                <button id="backupBtn" class="btn-backup">📥 バックアップ</button>
+                <button id="restoreBtn" class="btn-restore">📤 復元</button>
                 <span id="syncStatus">同期中...</span>
             </div>
         </header>
@@ -169,6 +171,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Hidden file input for restore -->
+    <input type="file" id="restoreFileInput" style="display: none;" accept=".json">
 
     <!-- JavaScript -->
     <script src="script.js"></script>

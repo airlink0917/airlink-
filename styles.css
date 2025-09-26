@@ -1076,3 +1076,79 @@ main {
         background: none;
     }
 }
+
+/* ===================================
+   バックアップ・復元ボタン
+   =================================== */
+.btn-backup, .btn-restore {
+    background: #2196F3;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: all 0.3s;
+    white-space: nowrap;
+}
+
+.btn-backup:hover, .btn-restore:hover {
+    background: #1976D2;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* モバイル用の特拡表示最適化 */
+.campaign-members-mobile {
+    font-size: 9px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
+    display: block !important;
+    line-height: 1.2 !important;
+}
+
+@media (max-width: 768px) {
+    /* モバイルでのバックアップボタン */
+    .btn-backup, .btn-restore {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+
+    /* 特拡の表示を1行に */
+    .campaign-cell-wide {
+        padding: 3px 5px !important;
+    }
+
+    .campaign-info {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+
+    .campaign-type {
+        font-size: 10px !important;
+        font-weight: bold;
+    }
+
+    .campaign-members {
+        font-size: 9px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        width: 100%;
+        display: block !important;
+    }
+
+    .campaign-note {
+        font-size: 8px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        width: 100%;
+        opacity: 0.8;
+    }
+}

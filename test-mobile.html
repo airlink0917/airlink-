@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>モバイル最適化テスト</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-section h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .test-list {
+            list-style: none;
+            padding: 0;
+        }
+        .test-list li {
+            padding: 8px;
+            margin-bottom: 5px;
+            background: #f5f5f5;
+            border-radius: 3px;
+        }
+        .success {
+            color: green;
+        }
+        .warning {
+            color: orange;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>日程システム - モバイル最適化テスト</h1>
+
+    <div class="test-section">
+        <h2>✅ 実装済み機能</h2>
+        <ul class="test-list">
+            <li class="success">✔ 特拡表示を1行で表示（担当者全員）</li>
+            <li class="success">✔ モバイルで文字サイズ自動調整</li>
+            <li class="success">✔ カレンダー自動更新（リフレッシュ不要）</li>
+            <li class="success">✔ 手動バックアップボタン追加</li>
+            <li class="success">✔ 復元機能追加</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>📱 モバイル最適化の詳細</h2>
+        <ul class="test-list">
+            <li><strong>特拡表示:</strong> campaign-members-mobileクラスで1行表示</li>
+            <li><strong>文字サイズ:</strong> 9px〜10pxに自動調整</li>
+            <li><strong>オーバーフロー:</strong> text-overflow: ellipsisで省略表示</li>
+            <li><strong>レスポンシブ:</strong> @media (max-width: 768px)で対応</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🔄 自動更新機能</h2>
+        <ul class="test-list">
+            <li>イベント保存時: <code>renderCalendar()</code>自動実行</li>
+            <li>特拡登録時: <code>renderCalendar()</code>自動実行</li>
+            <li>削除時: <code>renderCalendar()</code>自動実行</li>
+            <li>リフレッシュボタン不要</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>💾 バックアップ・復元機能</h2>
+        <ul class="test-list">
+            <li><strong>バックアップ:</strong> JSONファイルで日時付きダウンロード</li>
+            <li><strong>復元:</strong> JSONファイルアップロードで復元</li>
+            <li><strong>データ内容:</strong> イベント、担当者、日時情報を含む</li>
+            <li><strong>確認ダイアログ:</strong> 復元前に確認メッセージ表示</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 テスト手順</h2>
+        <ol>
+            <li>モバイルデバイスまたはブラウザの開発者ツールでモバイル表示を確認</li>
+            <li>特拡を登録し、担当者が1行で表示されることを確認</li>
+            <li>イベントを追加・編集し、自動的にカレンダーが更新されることを確認</li>
+            <li>バックアップボタンでデータをダウンロード</li>
+            <li>復元ボタンでデータを復元できることを確認</li>
+        </ol>
+    </div>
+
+    <script>
+        // ブラウザ情報を表示
+        const userAgent = navigator.userAgent;
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+
+        document.body.insertAdjacentHTML('afterbegin', `
+            <div class="test-section" style="background: #e3f2fd;">
+                <h2>📊 現在の環境</h2>
+                <p><strong>デバイス:</strong> ${isMobile ? 'モバイル' : 'デスクトップ'}</p>
+                <p><strong>画面幅:</strong> ${window.innerWidth}px</p>
+                <p><strong>User Agent:</strong> ${userAgent}</p>
+            </div>
+        `);
+    </script>
+</body>
+</html>

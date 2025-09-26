@@ -150,6 +150,33 @@ function setupEventListeners() {
         document.getElementById('campaignModal').style.display = 'block';
     });
 
+    // バックアップボタン
+    const backupBtn = document.getElementById('backupBtn');
+    if (backupBtn) {
+        backupBtn.addEventListener('click', () => {
+            backupData();
+        });
+    }
+
+    // 復元ボタン
+    const restoreBtn = document.getElementById('restoreBtn');
+    if (restoreBtn) {
+        restoreBtn.addEventListener('click', () => {
+            document.getElementById('restoreFileInput').click();
+        });
+    }
+
+    // 復元ファイル選択
+    const restoreFileInput = document.getElementById('restoreFileInput');
+    if (restoreFileInput) {
+        restoreFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                restoreData(file);
+            }
+        });
+    }
+
     // モーダル関連
     setupModalListeners();
 }
@@ -579,9 +606,11 @@ function renderCalendar() {
             };
             const campaignTypeName = campaignTypeNames[isCampaign.color] || '特拡';
 
-            // メンバー名の長さで文字サイズ調整
+            // モバイルの場合は1行表示、PCの場合は複数行表示可
             const memberText = isCampaign.campaignMembers?.join('、') || '';
-            const memberClass = memberText.length > 20 ? 'campaign-members long-members' : 'campaign-members';
+            const isMobile = isMobileDevice();
+            const memberClass = isMobile ? 'campaign-members campaign-members-mobile' :
+                               (memberText.length > 20 ? 'campaign-members long-members' : 'campaign-members');
 
             // 特拡の日は全体で1枠として表示（クリックで編集可能）
             html += `
@@ -916,7 +945,7 @@ function setupModalListeners() {
         }
 
         saveEvents();
-        renderCalendar();
+        renderCalendar(); // 自動的にカレンダーを更新
         document.getElementById('eventModal').style.display = 'none';
     });
 
@@ -987,7 +1016,7 @@ function setupModalListeners() {
             }
 
             saveEvents();
-            renderCalendar();
+            renderCalendar(); // 自動的にカレンダーを更新
 
             // フォームをリセット
             document.getElementById('campaignForm').reset();
@@ -1373,4 +1402,79 @@ window.editEvent = editEvent;
 window.editCampaign = editCampaign;
 
 // デバッグ用
+
+// ===================================
+// バックアップと復元機能
+// ===================================
+function backupData() {
+    try {
+        const backupData = {
+            version: '1.0',
+            date: new Date().toISOString(),
+            events: events,
+            staffMembers: staffMembers
+        };
+
+        const jsonStr = JSON.stringify(backupData, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+
+        // 現在の日時をファイル名に含める
+        const now = new Date();
+        const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+        const timeStr = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+
+        a.href = url;
+        a.download = `日程システム_バックアップ_${dateStr}_${timeStr}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        alert('バックアップファイルをダウンロードしました');
+    } catch (error) {
+        console.error('バックアップエラー:', error);
+        alert('バックアップに失敗しました');
+    }
+}
+
+function restoreData(file) {
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+        try {
+            const backupData = JSON.parse(e.target.result);
+
+            // データの妥当性チェック
+            if (!backupData.version || !backupData.events || !backupData.staffMembers) {
+                alert('無効なバックアップファイルです');
+                return;
+            }
+
+            if (confirm(`${backupData.date} のバックアップデータを復元しますか？\n現在のデータは上書きされます。`)) {
+                // データを復元
+                events = backupData.events || [];
+                staffMembers = backupData.staffMembers || [];
+
+                // LocalStorageに保存
+                saveEvents();
+                saveStaffMembers(false);
+
+                // Supabaseに同期
+                syncData();
+
+                // カレンダーを再描画
+                renderCalendar();
+
+                alert('データを復元しました');
+            }
+        } catch (error) {
+            console.error('復元エラー:', error);
+            alert('ファイルの読み込みに失敗しました');
+        }
+    };
+
+    reader.readAsText(file);
+}
 console.log('アプリケーション準備完了');
