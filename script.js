@@ -47,29 +47,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     // UI初期化
     initializeUI();
 
-    // Supabaseから最新データを取得
-    await syncData();
+    // Supabaseから最新データを取得 - 一時無効化
+    // await syncData();
+    console.log('初回同期をスキップ');
 
     // 定期同期を設定（10秒ごと）
-    setInterval(async () => {
-        console.log('定期同期実行 (間隔: 10秒)');
-        await syncData();
-    }, SYNC_INTERVAL);
-    console.log('自動同期を10秒間隔で開始');
+    // 一時的に無効化して問題を特定
+    // setInterval(async () => {
+    //     console.log('定期同期実行 (間隔: 10秒)');
+    //     await syncData();
+    // }, SYNC_INTERVAL);
+    console.log('自動同期を一時的に無効化');
 
-    // ページ表示時に強制同期
-    document.addEventListener('visibilitychange', async () => {
-        if (!document.hidden) {
-            console.log('ページが表示されました。同期を開始します。');
-            await syncData();
-        }
-    });
+    // ページ表示時に強制同期 - 一時無効化
+    // document.addEventListener('visibilitychange', async () => {
+    //     if (!document.hidden) {
+    //         console.log('ページが表示されました。同期を開始します。');
+    //         await syncData();
+    //     }
+    // });
 
-    // フォーカス時にも同期
-    window.addEventListener('focus', async () => {
-        console.log('ウィンドウがフォーカスされました。同期を開始します。');
-        await syncData();
-    });
+    // // フォーカス時にも同期 - 一時無効化
+    // window.addEventListener('focus', async () => {
+    //     console.log('ウィンドウがフォーカスされました。同期を開始します。');
+    //     await syncData();
+    // });
 
     console.log('初期化完了');
 });
@@ -950,7 +952,7 @@ function setupModalListeners() {
     });
 
     // イベントフォーム送信
-    document.getElementById('eventForm').addEventListener('submit', function(e) {
+    document.getElementById('eventForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         console.log('Event form submit triggered');
 
@@ -1014,20 +1016,42 @@ function setupModalListeners() {
         // モーダルを閉じる
         document.getElementById('eventModal').style.display = 'none';
 
-        // Supabaseに保存（バックグラウンド）
+        // Supabaseに保存（同期的に完了を待つ）
         const savedEvent = editingEventId ?
             events.find(e => e.id === editingEventId) :
             eventData;
 
-        if (savedEvent) {
-            if (editingEventId) {
-                updateEventInSupabase(savedEvent).catch(err =>
-                    console.error('Supabase更新エラー:', err)
-                );
-            } else {
-                saveEventToSupabase(savedEvent).catch(err =>
-                    console.error('Supabase保存エラー:', err)
-                );
+        if (savedEvent && supabase) {
+            try {
+                console.log('Supabaseに保存中...', savedEvent.id);
+                const eventDataForSupabase = {
+                    user_id: USER_ID,
+                    event_id: savedEvent.id,
+                    title: savedEvent.title || '',
+                    date: savedEvent.date,
+                    time: savedEvent.time || null,
+                    person: savedEvent.person || null,
+                    color: savedEvent.color || null,
+                    note: savedEvent.note || null,
+                    is_campaign: savedEvent.isCampaign || false,
+                    campaign_members: savedEvent.campaignMembers || []
+                };
+
+                const { data, error } = await supabase
+                    .from('schedule_events')
+                    .upsert(eventDataForSupabase, {
+                        onConflict: 'user_id,event_id'
+                    })
+                    .select();
+
+                if (error) {
+                    console.error('Supabase保存エラー:', error);
+                    alert('クラウドへの保存に失敗しました。ローカルにのみ保存されています。');
+                } else {
+                    console.log('Supabase保存成功:', data);
+                }
+            } catch (err) {
+                console.error('保存処理エラー:', err);
             }
         }
 
@@ -1072,26 +1096,42 @@ function setupModalListeners() {
             document.getElementById('eventModal').style.display = 'none';
             editingEventId = null;
 
-            // 4. Supabaseから即座に削除（完了を待つ）
-            try {
-                if (supabase) {
-                    console.log('Supabaseから削除中...', deletedId);
-                    const { error } = await supabase
-                        .from('schedule_events')
-                        .delete()
-                        .eq('event_id', deletedId)
-                        .eq('user_id', USER_ID);
+            // 4. Supabaseから削除（必ず完了を待つ）
+            if (supabase) {
+                try {
+                    console.log('Supabaseから削除開始...', deletedId);
 
-                    if (error) {
-                        console.error('Supabase削除エラー:', error);
-                        // エラーでもローカル削除は維持
+                    // 削除前に存在確認
+                    const { data: checkData } = await supabase
+                        .from('schedule_events')
+                        .select('event_id')
+                        .eq('event_id', deletedId)
+                        .eq('user_id', USER_ID)
+                        .single();
+
+                    if (checkData) {
+                        console.log('削除対象を確認:', checkData);
+
+                        const { data, error } = await supabase
+                            .from('schedule_events')
+                            .delete()
+                            .eq('event_id', deletedId)
+                            .eq('user_id', USER_ID)
+                            .select();
+
+                        if (error) {
+                            console.error('Supabase削除エラー:', error);
+                            alert('クラウドからの削除に失敗しました。ページをリロードしてください。');
+                        } else {
+                            console.log('Supabase削除成功:', data);
+                        }
                     } else {
-                        console.log('Supabase削除成功:', deletedId);
+                        console.log('削除対象がSupabaseに存在しない:', deletedId);
                     }
+                } catch (err) {
+                    console.error('削除処理エラー:', err);
+                    alert('削除処理中にエラーが発生しました');
                 }
-            } catch (err) {
-                console.error('削除処理エラー:', err);
-                // エラーでもローカル削除は維持
             }
 
             // 5. 削除完了メッセージ
@@ -1106,7 +1146,7 @@ function setupModalListeners() {
     });
 
     // 特拡フォーム送信
-    document.getElementById('campaignForm').addEventListener('submit', function(e) {
+    document.getElementById('campaignForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         console.log('Campaign form submit triggered');
 
@@ -1167,20 +1207,42 @@ function setupModalListeners() {
         renderCalendar();
         console.log('Calendar rendered');
 
-        // Supabaseに保存（バックグラウンド）
+        // Supabaseに保存（同期的に完了を待つ）
         const savedCampaign = window.editingCampaignId ?
             events.find(e => e.id === window.editingCampaignId) :
             events[events.length - 1];
 
-        if (savedCampaign) {
-            if (window.editingCampaignId) {
-                updateEventInSupabase(savedCampaign).catch(err =>
-                    console.error('Supabase更新エラー:', err)
-                );
-            } else {
-                saveEventToSupabase(savedCampaign).catch(err =>
-                    console.error('Supabase保存エラー:', err)
-                );
+        if (savedCampaign && supabase) {
+            try {
+                console.log('特拡をSupabaseに保存中...', savedCampaign.id);
+                const campaignDataForSupabase = {
+                    user_id: USER_ID,
+                    event_id: savedCampaign.id,
+                    title: savedCampaign.title || '特拡',
+                    date: savedCampaign.date,
+                    time: savedCampaign.time || null,
+                    person: savedCampaign.person || 'campaign',
+                    color: savedCampaign.color || null,
+                    note: savedCampaign.note || null,
+                    is_campaign: true,
+                    campaign_members: savedCampaign.campaignMembers || []
+                };
+
+                const { data, error } = await supabase
+                    .from('schedule_events')
+                    .upsert(campaignDataForSupabase, {
+                        onConflict: 'user_id,event_id'
+                    })
+                    .select();
+
+                if (error) {
+                    console.error('特拡保存エラー:', error);
+                    alert('特拡のクラウド保存に失敗しました。ローカルにのみ保存されています。');
+                } else {
+                    console.log('特拡保存成功:', data);
+                }
+            } catch (err) {
+                console.error('特拡保存処理エラー:', err);
             }
         }
 
