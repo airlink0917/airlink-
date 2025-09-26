@@ -13,6 +13,7 @@ let currentDate = new Date();
 let events = [];
 let staffMembers = [];
 let editingEventId = null;
+let recentlyDeletedIds = new Set(); // 最近削除されたIDを追跡
 
 // 同期設定（ミリ秒単位）
 const SYNC_INTERVAL = 10000; // 10秒ごとの自動同期
@@ -1072,7 +1073,10 @@ function setupModalListeners() {
             document.getElementById('eventModal').style.display = 'none';
             editingEventId = null;
 
-            // 4. Supabaseから削除（完了を待つ）
+            // 4. 削除IDを記録
+            recentlyDeletedIds.add(deletedId);
+
+            // 5. Supabaseから削除（完了を待つ）
             try {
                 if (supabase) {
                     const { error } = await supabase
@@ -1085,10 +1089,19 @@ function setupModalListeners() {
                         console.error('Supabase削除エラー:', error);
                     } else {
                         console.log('Supabase削除成功:', deletedId);
+                        // 削除成功後、少し待ってからIDをリストから除去
+                        setTimeout(() => {
+                            recentlyDeletedIds.delete(deletedId);
+                            console.log('削除IDをリストから除去:', deletedId);
+                        }, 3000);
                     }
                 }
             } catch (err) {
                 console.error('削除処理エラー:', err);
+                // エラー時もIDを除去
+                setTimeout(() => {
+                    recentlyDeletedIds.delete(deletedId);
+                }, 3000);
             }
 
             // 5. 削除完了メッセージ
@@ -1250,7 +1263,10 @@ function setupModalListeners() {
             document.getElementById('campaignModal').style.display = 'none';
             window.editingCampaignId = null;
 
-            // 4. Supabaseから削除（完了を待つ）
+            // 4. 削除IDを記録
+            recentlyDeletedIds.add(deletedId);
+
+            // 5. Supabaseから削除（完了を待つ）
             try {
                 if (supabase) {
                     const { error } = await supabase
@@ -1263,10 +1279,19 @@ function setupModalListeners() {
                         console.error('Supabase特拡削除エラー:', error);
                     } else {
                         console.log('Supabase特拡削除成功:', deletedId);
+                        // 削除成功後、少し待ってからIDをリストから除去
+                        setTimeout(() => {
+                            recentlyDeletedIds.delete(deletedId);
+                            console.log('特拡削除IDをリストから除去:', deletedId);
+                        }, 3000);
                     }
                 }
             } catch (err) {
                 console.error('特拡削除処理エラー:', err);
+                // エラー時もIDを除去
+                setTimeout(() => {
+                    recentlyDeletedIds.delete(deletedId);
+                }, 3000);
             }
 
             // 5. 削除完了メッセージ
@@ -1384,21 +1409,45 @@ async function syncData() {
             let hasChanges = false;
             for (const event of supabaseEvents) {
                 if (!localIds.has(event.id)) {
-                    events.push(event);
-                    hasChanges = true;
-                    console.log('他端末から追加されたイベント:', event.id);
+                    // 最近削除されたものでない場合のみ追加
+                    if (!recentlyDeletedIds.has(event.id)) {
+                        events.push(event);
+                        hasChanges = true;
+                        console.log('他端末から追加されたイベント:', event.id);
+                    } else {
+                        console.log('最近削除されたイベントのためスキップ:', event.id);
+                    }
                 }
             }
 
-            // ローカルにあるがSupabaseにないイベントを削除（他端末で削除された）
+            // ローカルにあるがSupabaseにないイベントの処理
             const originalLength = events.length;
             events = events.filter(e => {
-                const shouldKeep = supabaseIds.has(String(e.id));
-                if (!shouldKeep) {
-                    console.log('他端末で削除されたイベント:', e.id);
-                    hasChanges = true;
+                const eventId = String(e.id);
+
+                // 最近削除されたアイテムは保持（Supabaseへの削除が完了するまで）
+                if (recentlyDeletedIds.has(eventId)) {
+                    console.log('最近削除されたイベントのため保持:', eventId);
+                    return false; // 削除を維持
                 }
-                return shouldKeep;
+
+                // Supabaseにないイベントを確認
+                const shouldKeep = supabaseIds.has(eventId);
+                if (!shouldKeep) {
+                    // 新規作成されたイベント（10秒以内）は保持
+                    const eventAge = Date.now() - parseInt(eventId.replace('campaign_', '').replace('test_', ''));
+                    if (!isNaN(eventAge) && eventAge < 10000) {
+                        console.log('新規作成イベントのため保持:', eventId);
+                        // Supabaseに保存
+                        saveEventToSupabase(e).catch(err => console.error('保存エラー:', err));
+                        return true;
+                    }
+
+                    console.log('他端末で削除されたイベント:', eventId);
+                    hasChanges = true;
+                    return false;
+                }
+                return true;
             });
 
             // 変更があれば更新
