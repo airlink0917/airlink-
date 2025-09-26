@@ -1082,23 +1082,11 @@ function setupModalListeners() {
             renderCalendar();
             console.log('Calendar re-rendered immediately after deletion');
 
-            // Supabaseから削除（同期的に待機）
-            deleteEventFromSupabase(deletedId)
-                .then(() => {
-                    console.log('Supabase deletion successful');
-                    // 削除成功メッセージ
-                    const syncStatus = document.getElementById('syncStatus');
-                    if (syncStatus) {
-                        syncStatus.textContent = '✅ 削除しました';
-                        setTimeout(() => {
-                            syncStatus.textContent = '';
-                        }, 2000);
-                    }
-                })
-                .catch(err => {
-                    console.error('Supabase削除エラー:', err);
-                    // エラーでもローカル削除は維持
-                });
+            // Supabaseから削除（非同期で実行、待機しない）
+            deleteEventFromSupabase(deletedId).catch(err => {
+                console.error('Supabase削除エラー:', err);
+                // エラーでもローカル削除は維持
+            });
 
             // モーダルを閉じる
             document.getElementById('eventModal').style.display = 'none';
@@ -1274,23 +1262,11 @@ function setupModalListeners() {
             renderCalendar();
             console.log('Calendar re-rendered immediately after campaign deletion');
 
-            // Supabaseから削除（同期的に待機）
-            deleteEventFromSupabase(deletedId)
-                .then(() => {
-                    console.log('Supabase campaign deletion successful');
-                    // 削除成功メッセージ
-                    const syncStatus = document.getElementById('syncStatus');
-                    if (syncStatus) {
-                        syncStatus.textContent = '✅ 特拡を削除しました';
-                        setTimeout(() => {
-                            syncStatus.textContent = '';
-                        }, 2000);
-                    }
-                })
-                .catch(err => {
-                    console.error('Supabase削除エラー:', err);
-                    // エラーでもローカル削除は維持
-                });
+            // Supabaseから削除（非同期で実行、待機しない）
+            deleteEventFromSupabase(deletedId).catch(err => {
+                console.error('Supabase削除エラー:', err);
+                // エラーでもローカル削除は維持
+            });
 
             // モーダルを閉じる
             document.getElementById('campaignModal').style.display = 'none';
@@ -1392,11 +1368,9 @@ async function syncData() {
             if (syncStatus) {
                 syncStatus.textContent = '';
             }
-        } else if (eventData) {
-            // 現在のデータと比較
-            const currentEventsJson = JSON.stringify(events.sort((a,b) => a.id.localeCompare(b.id)));
-
-            // Supabaseのデータをマージ（IDは必ず文字列に）
+        } else if (eventData !== null) {
+            // Supabaseのデータを真実の情報源として扱う
+            // Supabaseにあるデータのみを使用（ローカルのみのデータは破棄）
             const supabaseEvents = eventData.map(e => ({
                 id: String(e.event_id || e.id),
                 date: e.date,
@@ -1409,31 +1383,17 @@ async function syncData() {
                 campaignMembers: e.campaign_members
             }));
 
-            // Supabaseから削除されたイベントをローカルからも削除
-            const supabaseIds = new Set(supabaseEvents.map(e => e.id));
-            const localDeletedEvents = events.filter(e => !supabaseIds.has(e.id));
-
-            // ローカルのみに存在するイベントの処理
-            const newEvents = [...supabaseEvents];
-            for (const localEvent of localDeletedEvents) {
-                // 最近作成されたイベント（5秒以内）は保持してSupabaseに保存
-                const eventAge = Date.now() - parseInt(localEvent.id);
-                if (!isNaN(eventAge) && eventAge < 5000) {
-                    // 新規イベントなのでSupabaseに保存
-                    saveEventToSupabase(localEvent).catch(err =>
-                        console.error('ローカルイベントの同期エラー:', err)
-                    );
-                    newEvents.push(localEvent);
-                }
-                // 古いイベントは削除されたとみなして除外
-            }
-
-            const newEventsJson = JSON.stringify(newEvents.sort((a,b) => a.id.localeCompare(b.id)));
+            // 現在のローカルデータと比較
+            const currentEventsJson = JSON.stringify(events.sort((a,b) => a.id.localeCompare(b.id)));
+            const newEventsJson = JSON.stringify(supabaseEvents.sort((a,b) => a.id.localeCompare(b.id)));
 
             // データが変更された場合のみ更新
             if (currentEventsJson !== newEventsJson) {
                 console.log('データ変更を検知 - カレンダーを自動更新');
-                events = newEvents;
+                console.log('ローカルイベント数:', events.length, '→ Supabaseイベント数:', supabaseEvents.length);
+
+                // Supabaseのデータで完全に置き換える
+                events = supabaseEvents;
                 saveEvents();
                 renderCalendar();
 
@@ -1527,32 +1487,12 @@ async function saveEventToSupabase(event) {
 
         console.log('保存データ:', eventData);
 
-        // まずデータが存在するかチェック
-        const { data: existingData } = await supabase
+        // upsert（挿入または更新）を使用して簡潔に
+        const { data, error } = await supabase
             .from('schedule_events')
-            .select('id')
-            .eq('event_id', eventData.event_id)
-            .eq('user_id', eventData.user_id)
-            .single();
-
-        let data, error;
-        if (existingData) {
-            // データが存在する場合は更新
-            const result = await supabase
-                .from('schedule_events')
-                .update(eventData)
-                .eq('event_id', eventData.event_id)
-                .eq('user_id', eventData.user_id);
-            data = result.data;
-            error = result.error;
-        } else {
-            // データが存在しない場合は挿入
-            const result = await supabase
-                .from('schedule_events')
-                .insert(eventData);
-            data = result.data;
-            error = result.error;
-        }
+            .upsert(eventData, {
+                onConflict: 'user_id,event_id'
+            });
 
         if (error) {
             console.error('Supabase保存エラー:', error);
@@ -1560,11 +1500,7 @@ async function saveEventToSupabase(event) {
             throw error;
         } else {
             console.log('保存成功:', data);
-            // 保存成功後、即座に同期を実行（他端末への反映を早める）
-            setTimeout(() => {
-                console.log('保存後の同期を実行');
-                syncData();
-            }, 500);
+            // 保存成功後は同期を待たない（定期同期に任せる）
         }
 
     } catch (error) {
@@ -1581,26 +1517,32 @@ async function updateEventInSupabase(event) {
     }
 
     try {
+        const eventData = {
+            user_id: USER_ID,
+            event_id: event.id,
+            title: event.title || '',
+            date: event.date,
+            time: event.time || null,
+            person: event.person || null,
+            color: event.color || null,
+            note: event.note || null,
+            is_campaign: event.isCampaign || false,
+            campaign_members: event.campaignMembers || []
+        };
+
+        // upsertで更新
         const { data, error } = await supabase
             .from('schedule_events')
-            .update({
-                title: event.title || '',
-                time: event.time || null,
-                color: event.color || null,
-                note: event.note || null,
-                person: event.person || null,
-                is_campaign: event.isCampaign || false,
-                campaign_members: event.campaignMembers || []
-            })
-            .eq('event_id', event.id)
-            .eq('user_id', USER_ID);
+            .upsert(eventData, {
+                onConflict: 'user_id,event_id'
+            });
 
         if (error) {
             console.error('Supabase更新エラー:', error);
-            alert(`データ更新に失敗しました: ${error.message}`);
+            // アラートは表示しない
         } else {
             console.log('更新成功:', data);
-            setTimeout(() => syncData(), 500);
+            // 更新成功後は同期を待たない（定期同期に任せる）
         }
 
     } catch (error) {
@@ -1612,18 +1554,20 @@ async function deleteEventFromSupabase(eventId) {
     if (!supabase) return;
 
     try {
+        console.log('Supabaseから削除開始 - eventId:', eventId);
+
         const { data, error } = await supabase
             .from('schedule_events')
             .delete()
-            .eq('event_id', eventId)
+            .eq('event_id', String(eventId))
             .eq('user_id', USER_ID);
 
         if (error) {
             console.error('Supabase削除エラー:', error);
-            alert(`データ削除に失敗しました: ${error.message}`);
+            // アラートは表示しない（UXを妨げない）
         } else {
-            console.log('削除成功:', data);
-            setTimeout(() => syncData(), 500);
+            console.log('Supabaseから削除成功:', eventId);
+            // 削除成功後は同期を待たない（定期同期に任せる）
         }
 
     } catch (error) {
