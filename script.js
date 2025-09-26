@@ -573,7 +573,9 @@ function renderCalendar() {
         const isHoliday = holidays[date];
         const isCampaign = events.find(e => e.date === date && e.isCampaign);
 
-        html += '<div class="calendar-row">';
+        // 特拡の行は特別なクラスを追加
+        const rowClass = isCampaign ? 'calendar-row has-campaign' : 'calendar-row';
+        html += `<div class="${rowClass}">`;
 
         // 日付セルのクラスを決定
         let dateCellClass = 'calendar-cell date-cell';
@@ -614,10 +616,10 @@ function renderCalendar() {
             const memberClass = isMobile ? 'campaign-members campaign-members-mobile' :
                                (memberText.length > 20 ? 'campaign-members long-members' : 'campaign-members');
 
-            // 特拡の日は全体で1枠として表示（クリックで編集可能）
+            // 特拡の日は全幅で表示（クリックで編集可能）
             html += `
                 <div class="calendar-cell event-cell campaign-cell-wide"
-                     style="background-color: ${isCampaign.color || '#E1BEE7'}; grid-column: span ${selectedStaff.length}; cursor: pointer;"
+                     style="background-color: ${isCampaign.color || '#E1BEE7'}; cursor: pointer;"
                      data-campaign-id="${isCampaign.id}">
                     <div class="campaign-info">
                         <div class="campaign-type">${campaignTypeName}</div>

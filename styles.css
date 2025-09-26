@@ -485,40 +485,58 @@ main {
     background: #e1bee7;
 }
 
+/* 特拡がある行のスタイル */
+.calendar-row.has-campaign {
+    display: flex;
+}
+
+.calendar-row.has-campaign .date-cell {
+    flex-shrink: 0;
+}
+
+.calendar-row.has-campaign .campaign-cell-wide {
+    flex: 1;
+    width: 100%;
+}
+
 .campaign-cell-wide {
     text-align: center;
-    padding: 10px;
+    padding: 8px 10px;
     font-weight: bold;
     border: 2px solid rgba(0, 0, 0, 0.1);
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .campaign-info {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    gap: 5px;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: nowrap;
 }
 
 .campaign-type {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: bold;
     color: #4a148c;
     background: rgba(255, 255, 255, 0.8);
-    padding: 4px 12px;
-    border-radius: 6px;
-    margin-bottom: 5px;
+    padding: 2px 8px;
+    border-radius: 4px;
     display: inline-block;
+    white-space: nowrap;
 }
 
 .campaign-members {
     font-size: 11px;
     color: #333;
-    max-width: 100%;
-    text-align: center;
-    word-wrap: break-word;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    max-width: 50%;
 }
 
 .campaign-members.long-members {
@@ -536,13 +554,11 @@ main {
 .campaign-note {
     font-size: 9px;
     color: #666;
-    margin-top: 2px;
     font-style: italic;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 100%;
-    max-height: 12px;
+    max-width: 30%;
 }
 
 /* ===================================
