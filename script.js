@@ -13,7 +13,6 @@ let currentDate = new Date();
 let events = [];
 let staffMembers = [];
 let editingEventId = null;
-let isDeleting = false; // 削除中フラグ
 
 // 同期設定（ミリ秒単位）
 const SYNC_INTERVAL = 10000; // 10秒ごとの自動同期
@@ -1055,9 +1054,6 @@ function setupModalListeners() {
             console.log('Deleting event with ID:', deletedId);
             console.log('Current events:', events.map(e => ({ id: e.id, title: e.title })));
 
-            // 削除中フラグを立てる
-            isDeleting = true;
-
             const beforeLength = events.length;
             // IDの型を統一して比較（文字列として比較）
             events = events.filter(e => {
@@ -1082,23 +1078,26 @@ function setupModalListeners() {
             console.log('Events saved to localStorage');
             console.log('Remaining events:', events.length);
 
-            // Supabaseから先に削除（同期で古いデータが戻らないように）
+            // カレンダーを即座に再描画
+            renderCalendar();
+            console.log('Calendar re-rendered immediately after deletion');
+
+            // Supabaseから削除（同期的に待機）
             deleteEventFromSupabase(deletedId)
                 .then(() => {
                     console.log('Supabase deletion successful');
-                    // Supabase削除成功後にカレンダーを再描画
-                    renderCalendar();
-                    console.log('Calendar re-rendered after Supabase deletion');
-                    // 削除フラグをリセット
-                    isDeleting = false;
+                    // 削除成功メッセージ
+                    const syncStatus = document.getElementById('syncStatus');
+                    if (syncStatus) {
+                        syncStatus.textContent = '✅ 削除しました';
+                        setTimeout(() => {
+                            syncStatus.textContent = '';
+                        }, 2000);
+                    }
                 })
                 .catch(err => {
                     console.error('Supabase削除エラー:', err);
-                    // エラーがあってもカレンダーは更新
-                    renderCalendar();
-                    console.log('Calendar re-rendered despite Supabase error');
-                    // 削除フラグをリセット
-                    isDeleting = false;
+                    // エラーでもローカル削除は維持
                 });
 
             // モーダルを閉じる
@@ -1246,9 +1245,6 @@ function setupModalListeners() {
         if (confirm('この特拡を削除しますか？')) {
             const deletedId = window.editingCampaignId;
 
-            // 削除中フラグを立てる
-            isDeleting = true;
-
             const beforeLength = events.length;
 
             // 削除実行（IDの型を統一して比較）
@@ -1274,23 +1270,26 @@ function setupModalListeners() {
             localStorage.setItem('scheduleEvents', JSON.stringify(events));
             console.log('Events saved to localStorage');
 
-            // Supabaseから先に削除（同期で古いデータが戻らないように）
+            // カレンダーを即座に再描画
+            renderCalendar();
+            console.log('Calendar re-rendered immediately after campaign deletion');
+
+            // Supabaseから削除（同期的に待機）
             deleteEventFromSupabase(deletedId)
                 .then(() => {
                     console.log('Supabase campaign deletion successful');
-                    // Supabase削除成功後にカレンダーを再描画
-                    renderCalendar();
-                    console.log('Calendar re-rendered after campaign deletion');
-                    // 削除フラグをリセット
-                    isDeleting = false;
+                    // 削除成功メッセージ
+                    const syncStatus = document.getElementById('syncStatus');
+                    if (syncStatus) {
+                        syncStatus.textContent = '✅ 特拡を削除しました';
+                        setTimeout(() => {
+                            syncStatus.textContent = '';
+                        }, 2000);
+                    }
                 })
                 .catch(err => {
                     console.error('Supabase削除エラー:', err);
-                    // エラーがあってもカレンダーは更新
-                    renderCalendar();
-                    console.log('Calendar re-rendered despite error');
-                    // 削除フラグをリセット
-                    isDeleting = false;
+                    // エラーでもローカル削除は維持
                 });
 
             // モーダルを閉じる
@@ -1365,12 +1364,6 @@ function loadStaffMembers() {
 // Supabase同期
 // ===================================
 async function syncData() {
-    // 削除中は同期をスキップ
-    if (isDeleting) {
-        console.log('削除処理中のため同期をスキップ');
-        return;
-    }
-
     if (!supabase) {
         console.error('同期エラー: Supabaseが初期化されていません');
         const syncStatus = document.getElementById('syncStatus');
@@ -1404,7 +1397,7 @@ async function syncData() {
             const currentEventsJson = JSON.stringify(events.sort((a,b) => a.id.localeCompare(b.id)));
 
             // Supabaseのデータをマージ（IDは必ず文字列に）
-            const newEvents = eventData.map(e => ({
+            const supabaseEvents = eventData.map(e => ({
                 id: String(e.event_id || e.id),
                 date: e.date,
                 person: e.person,
@@ -1416,16 +1409,24 @@ async function syncData() {
                 campaignMembers: e.campaign_members
             }));
 
-            // ローカルのみに存在するイベントも保持
-            events.forEach(localEvent => {
-                if (!newEvents.find(e => e.id === localEvent.id)) {
-                    // ローカルにしかないイベントはSupabaseに保存
+            // Supabaseから削除されたイベントをローカルからも削除
+            const supabaseIds = new Set(supabaseEvents.map(e => e.id));
+            const localDeletedEvents = events.filter(e => !supabaseIds.has(e.id));
+
+            // ローカルのみに存在するイベントの処理
+            const newEvents = [...supabaseEvents];
+            for (const localEvent of localDeletedEvents) {
+                // 最近作成されたイベント（5秒以内）は保持してSupabaseに保存
+                const eventAge = Date.now() - parseInt(localEvent.id);
+                if (!isNaN(eventAge) && eventAge < 5000) {
+                    // 新規イベントなのでSupabaseに保存
                     saveEventToSupabase(localEvent).catch(err =>
                         console.error('ローカルイベントの同期エラー:', err)
                     );
                     newEvents.push(localEvent);
                 }
-            });
+                // 古いイベントは削除されたとみなして除外
+            }
 
             const newEventsJson = JSON.stringify(newEvents.sort((a,b) => a.id.localeCompare(b.id)));
 
