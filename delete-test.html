@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>削除機能テスト</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .delete-btn {
+            background: #f44336;
+        }
+        .delete-btn:hover {
+            background: #da190b;
+        }
+        #eventList {
+            margin-top: 10px;
+        }
+        .event-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .event-info {
+            flex: 1;
+        }
+        .event-id {
+            color: #666;
+            font-size: 12px;
+            font-family: monospace;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>削除機能デバッグテスト</h1>
+
+    <div class="test-section">
+        <h2>現在のイベントデータ</h2>
+        <button onclick="loadAndDisplayEvents()">イベントを再読み込み</button>
+        <button onclick="addTestEvent()">テストイベント追加</button>
+        <button onclick="clearAllEvents()" class="delete-btn">全イベントクリア</button>
+        <div id="eventList"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>データ詳細</h2>
+        <button onclick="showRawData()">生データを表示</button>
+        <div id="rawData"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>ステータス</h2>
+        <div id="status" class="status info">待機中...</div>
+    </div>
+
+    <script>
+        let events = [];
+
+        // イベント読み込みと表示
+        function loadAndDisplayEvents() {
+            const saved = localStorage.getItem('scheduleEvents');
+            if (saved) {
+                events = JSON.parse(saved);
+                displayEvents();
+                showStatus('info', `${events.length}件のイベントを読み込みました`);
+            } else {
+                events = [];
+                displayEvents();
+                showStatus('info', 'イベントがありません');
+            }
+        }
+
+        // イベント表示
+        function displayEvents() {
+            const list = document.getElementById('eventList');
+            if (events.length === 0) {
+                list.innerHTML = '<p>イベントがありません</p>';
+                return;
+            }
+
+            let html = `<p>イベント数: ${events.length}件</p>`;
+            events.forEach((event, index) => {
+                const idType = typeof event.id;
+                html += `
+                    <div class="event-item">
+                        <div class="event-info">
+                            <strong>${event.title || '(タイトルなし)'}</strong> - ${event.date || '日付なし'}
+                            <div class="event-id">
+                                ID: "${event.id}" (型: ${idType})
+                                ${event.person ? ` | 担当: ${event.person}` : ''}
+                            </div>
+                        </div>
+                        <button onclick="deleteEvent('${event.id}')" class="delete-btn">削除</button>
+                    </div>
+                `;
+            });
+            list.innerHTML = html;
+        }
+
+        // イベント削除
+        function deleteEvent(eventId) {
+            console.log('削除開始 - ID:', eventId, '型:', typeof eventId);
+
+            const beforeLength = events.length;
+            console.log('削除前のイベント:', events.map(e => ({id: e.id, type: typeof e.id})));
+
+            // 文字列として比較
+            events = events.filter(e => {
+                const match = String(e.id) === String(eventId);
+                console.log(`比較: "${e.id}" === "${eventId}" => ${match}`);
+                return !match;
+            });
+
+            const afterLength = events.length;
+            console.log('削除後のイベント数:', beforeLength, '->', afterLength);
+
+            if (beforeLength === afterLength) {
+                showStatus('error', `削除失敗: ID "${eventId}" のイベントが見つかりませんでした`);
+            } else {
+                // 保存
+                localStorage.setItem('scheduleEvents', JSON.stringify(events));
+                showStatus('success', `イベントを削除しました (ID: ${eventId})`);
+                displayEvents();
+            }
+        }
+
+        // テストイベント追加
+        function addTestEvent() {
+            const now = Date.now();
+            const testEvent = {
+                id: now.toString(), // 文字列ID
+                date: new Date().toISOString().split('T')[0],
+                title: 'テストイベント ' + new Date().toLocaleTimeString(),
+                person: 'staff-0',
+                color: '#E1BEE7',
+                note: 'テスト',
+                isCampaign: false
+            };
+
+            events.push(testEvent);
+            localStorage.setItem('scheduleEvents', JSON.stringify(events));
+
+            showStatus('success', `テストイベントを追加しました (ID: ${testEvent.id})`);
+            displayEvents();
+        }
+
+        // 全イベントクリア
+        function clearAllEvents() {
+            if (confirm('本当にすべてのイベントを削除しますか？')) {
+                events = [];
+                localStorage.setItem('scheduleEvents', JSON.stringify(events));
+                showStatus('success', 'すべてのイベントを削除しました');
+                displayEvents();
+            }
+        }
+
+        // 生データ表示
+        function showRawData() {
+            const rawDiv = document.getElementById('rawData');
+            const saved = localStorage.getItem('scheduleEvents');
+            if (saved) {
+                const data = JSON.parse(saved);
+                rawDiv.innerHTML = `
+                    <h3>LocalStorageの生データ:</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } else {
+                rawDiv.innerHTML = '<p>データがありません</p>';
+            }
+        }
+
+        // ステータス表示
+        function showStatus(type, message) {
+            const status = document.getElementById('status');
+            status.className = 'status ' + type;
+            status.textContent = message;
+        }
+
+        // 初期読み込み
+        loadAndDisplayEvents();
+    </script>
+</body>
+</html>

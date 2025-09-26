@@ -982,17 +982,22 @@ function setupModalListeners() {
 
         if (editingEventId) {
             // 既存イベントの更新
-            const index = events.findIndex(e => e.id === editingEventId);
+            console.log('Updating event with ID:', editingEventId);
+            const index = events.findIndex(e => String(e.id) === String(editingEventId));
             if (index !== -1) {
-                eventData.id = editingEventId;
+                eventData.id = editingEventId; // 既存のIDを保持
                 events[index] = eventData;
-                console.log('Event updated:', events[index]);
+                console.log('Event updated at index', index, ':', events[index]);
+            } else {
+                console.error('Event not found for update:', editingEventId);
+                alert('イベントの更新に失敗しました');
+                return;
             }
         } else {
             // 新規イベントの作成
             eventData.id = Date.now().toString();
             events.push(eventData);
-            console.log('New event created:', eventData);
+            console.log('New event created with ID:', eventData.id, eventData);
         }
 
         // データを保存
@@ -1046,8 +1051,18 @@ function setupModalListeners() {
         if (confirm('このイベントを削除しますか？')) {
             // 削除実行
             const deletedId = editingEventId;
+            console.log('Deleting event with ID:', deletedId);
+            console.log('Current events:', events.map(e => ({ id: e.id, title: e.title })));
+
             const beforeLength = events.length;
-            events = events.filter(e => e.id !== deletedId);
+            // IDの型を統一して比較（文字列として比較）
+            events = events.filter(e => {
+                const match = String(e.id) === String(deletedId);
+                if (match) {
+                    console.log('Found event to delete:', e);
+                }
+                return !match;
+            });
             const afterLength = events.length;
 
             if (beforeLength === afterLength) {
@@ -1056,15 +1071,16 @@ function setupModalListeners() {
                 return;
             }
 
-            console.log(`Event deleted: ${deletedId}, events: ${beforeLength} -> ${afterLength}`);
+            console.log(`Event deletion result: ${beforeLength} -> ${afterLength}`);
 
             // データを保存
             localStorage.setItem('scheduleEvents', JSON.stringify(events));
             console.log('Events saved to localStorage');
+            console.log('Remaining events:', events.length);
 
             // カレンダーを再描画
             renderCalendar();
-            console.log('Calendar updated');
+            console.log('Calendar re-rendered');
 
             // Supabaseから削除（バックグラウンド）
             deleteEventFromSupabase(deletedId).catch(err =>
@@ -1217,12 +1233,19 @@ function setupModalListeners() {
             const deletedId = window.editingCampaignId;
             const beforeLength = events.length;
 
-            // 削除実行
-            events = events.filter(e => e.id !== deletedId);
+            // 削除実行（IDの型を統一して比較）
+            events = events.filter(e => {
+                const match = String(e.id) === String(deletedId);
+                if (match) {
+                    console.log('Found campaign to delete:', e);
+                }
+                return !match;
+            });
             const afterLength = events.length;
 
             if (beforeLength === afterLength) {
                 console.error('特拡が見つかりませんでした:', deletedId);
+                console.error('Current events:', events.map(e => ({ id: e.id, title: e.title })));
                 alert('特拡の削除に失敗しました');
                 return;
             }
@@ -1276,6 +1299,14 @@ function loadEvents() {
     const saved = localStorage.getItem('scheduleEvents');
     if (saved) {
         events = JSON.parse(saved);
+        // IDをすべて文字列に統一
+        events = events.map(e => {
+            if (e.id && typeof e.id !== 'string') {
+                e.id = String(e.id);
+            }
+            return e;
+        });
+        console.log('Events loaded:', events.length, 'events');
     }
 }
 
@@ -1338,9 +1369,9 @@ async function syncData() {
             // 現在のデータと比較
             const currentEventsJson = JSON.stringify(events.sort((a,b) => a.id.localeCompare(b.id)));
 
-            // Supabaseのデータをマージ
+            // Supabaseのデータをマージ（IDは必ず文字列に）
             const newEvents = eventData.map(e => ({
-                id: e.event_id || e.id.toString(),
+                id: String(e.event_id || e.id),
                 date: e.date,
                 person: e.person,
                 title: e.title,
