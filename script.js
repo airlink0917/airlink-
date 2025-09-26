@@ -912,97 +912,119 @@ function editCampaign(campaignId) {
 // モーダル処理
 // ===================================
 function setupModalListeners() {
-    // モーダルを閉じる
+    // モーダルを閉じる共通処理
+    const closeAllModals = () => {
+        document.getElementById('eventModal').style.display = 'none';
+        document.getElementById('campaignModal').style.display = 'none';
+        document.getElementById('staffModal').style.display = 'none';
+
+        // 編集中のIDをリセット
+        editingEventId = null;
+        window.editingCampaignId = null;
+    };
+
+    // 閉じるボタンとキャンセルボタン
     document.querySelectorAll('.modal .close, .btn-cancel').forEach(element => {
-        element.addEventListener('click', () => {
-            document.getElementById('eventModal').style.display = 'none';
-            document.getElementById('campaignModal').style.display = 'none';
+        element.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            closeAllModals();
         });
     });
 
     // イベントフォーム送信
-    document.getElementById('eventForm').addEventListener('submit', async (e) => {
+    document.getElementById('eventForm').addEventListener('submit', (e) => {
         e.preventDefault();
 
-        const eventData = {
-            date: document.getElementById('eventDate').value,
-            person: document.getElementById('eventPerson').value,
-            title: document.getElementById('eventTitle').value,
-            time: document.getElementById('eventTime').value,
-            color: document.getElementById('eventColor').value,
-            note: document.getElementById('eventNote').value,
-            isCampaign: false
-        };
+        try {
+            const eventData = {
+                date: document.getElementById('eventDate').value,
+                person: document.getElementById('eventPerson').value,
+                title: document.getElementById('eventTitle').value,
+                time: document.getElementById('eventTime').value,
+                color: document.getElementById('eventColor').value,
+                note: document.getElementById('eventNote').value,
+                isCampaign: false
+            };
 
-        if (editingEventId) {
-            // 更新
-            const index = events.findIndex(e => e.id === editingEventId);
-            if (index !== -1) {
-                events[index] = { ...events[index], ...eventData };
-
-                // まずローカルに保存してカレンダーを更新
-                saveEvents();
-                renderCalendar();
-
-                // Supabase更新（エラーが出ても続行）
-                updateEventInSupabase(events[index]).catch(error => {
-                    console.error('Supabase更新エラー:', error);
-                });
+            if (editingEventId) {
+                // 更新
+                const index = events.findIndex(e => e.id === editingEventId);
+                if (index !== -1) {
+                    events[index] = { ...events[index], ...eventData };
+                }
+            } else {
+                // 新規作成
+                eventData.id = Date.now().toString();
+                events.push(eventData);
             }
-        } else {
-            // 新規作成
-            eventData.id = Date.now().toString();
-            events.push(eventData);
 
-            // まずローカルに保存してカレンダーを更新
+            // ローカル保存とカレンダー更新
             saveEvents();
             renderCalendar();
 
-            // Supabase保存（エラーが出ても続行）
-            saveEventToSupabase(eventData).catch(error => {
-                console.error('Supabase保存エラー:', error);
-            });
-        }
+            // モーダルを閉じる
+            document.getElementById('eventModal').style.display = 'none';
 
-        document.getElementById('eventModal').style.display = 'none';
+            // Supabase同期（バックグラウンド）
+            if (editingEventId) {
+                updateEventInSupabase(events.find(e => e.id === editingEventId)).catch(() => {});
+            } else {
+                saveEventToSupabase(eventData).catch(() => {});
+            }
+        } catch (error) {
+            console.error('イベント保存エラー:', error);
+            alert('保存に失敗しました');
+        }
     });
 
     // イベント削除
-    document.getElementById('deleteEvent').addEventListener('click', async () => {
+    document.getElementById('deleteEvent').addEventListener('click', () => {
+        if (!editingEventId) return;
+
         if (confirm('このイベントを削除しますか？')) {
-            events = events.filter(e => e.id !== editingEventId);
+            try {
+                // 削除実行
+                events = events.filter(e => e.id !== editingEventId);
 
-            // まずローカルで削除してカレンダーを更新
-            saveEvents();
-            renderCalendar();
-            document.getElementById('eventModal').style.display = 'none';
+                // ローカル保存とカレンダー更新
+                saveEvents();
+                renderCalendar();
 
-            // Supabase削除（エラーが出ても続行）
-            deleteEventFromSupabase(editingEventId).catch(error => {
-                console.error('Supabase削除エラー:', error);
-            });
+                // モーダルを閉じる
+                document.getElementById('eventModal').style.display = 'none';
+
+                // Supabase削除（バックグラウンド）
+                deleteEventFromSupabase(editingEventId).catch(() => {});
+
+                editingEventId = null;
+            } catch (error) {
+                console.error('イベント削除エラー:', error);
+                alert('削除に失敗しました');
+            }
         }
     });
 
     // 特拡フォーム送信
-    document.getElementById('campaignForm').addEventListener('submit', async (e) => {
+    document.getElementById('campaignForm').addEventListener('submit', (e) => {
         e.preventDefault();
 
-        const members = [];
-        document.querySelectorAll('#campaignMembers input:checked').forEach(cb => {
-            if (cb.value === 'その他') {
-                const otherName = document.getElementById('otherMemberName').value;
-                if (otherName) {
-                    members.push(otherName);
-                }
-            } else {
-                members.push(cb.value);
-            }
-        });
-
-        const date = document.getElementById('campaignDate').value;
-
         try {
+            // メンバー収集
+            const members = [];
+            document.querySelectorAll('#campaignMembers input:checked').forEach(cb => {
+                if (cb.value === 'その他') {
+                    const otherName = document.getElementById('otherMemberName').value;
+                    if (otherName) members.push(otherName);
+                } else {
+                    members.push(cb.value);
+                }
+            });
+
+            const date = document.getElementById('campaignDate').value;
+            const campaignType = document.getElementById('campaignType').value;
+            const campaignNote = document.getElementById('campaignNote').value || '';
+
             if (window.editingCampaignId) {
                 // 編集モード
                 const index = events.findIndex(e => e.id === window.editingCampaignId);
@@ -1010,58 +1032,51 @@ function setupModalListeners() {
                     events[index] = {
                         ...events[index],
                         date: date,
-                        color: document.getElementById('campaignType').value,
+                        color: campaignType,
                         campaignMembers: members,
-                        note: document.getElementById('campaignNote').value || ''
+                        note: campaignNote
                     };
-
-                    // まずローカルに保存してカレンダーを更新
-                    saveEvents();
-                    renderCalendar();
-
-                    // Supabase更新（エラーが出ても続行）
-                    updateEventInSupabase(events[index]).catch(error => {
-                        console.error('Supabase更新エラー:', error);
-                    });
                 }
-                window.editingCampaignId = null;
             } else {
                 // 新規作成モード
                 const campaignData = {
                     id: 'campaign_' + Date.now().toString(),
                     date: date,
                     title: '特拡',
-                    color: document.getElementById('campaignType').value || '',
+                    color: campaignType || '',
                     campaignMembers: members,
-                    note: document.getElementById('campaignNote').value || '',
+                    note: campaignNote,
                     isCampaign: true,
                     person: 'campaign'
                 };
 
-                console.log('特拡データ保存:', campaignData);
-
                 // 既存の特拡を削除
                 events = events.filter(e => !(e.date === date && e.isCampaign));
-
                 events.push(campaignData);
-
-                // まずローカルに保存してカレンダーを更新
-                saveEvents();
-                renderCalendar();
-
-                // Supabase保存（エラーが出ても続行）
-                saveEventToSupabase(campaignData).catch(error => {
-                    console.error('Supabase保存エラー:', error);
-                });
             }
 
-            // フォームをリセット
+            // ローカル保存とカレンダー更新
+            saveEvents();
+            renderCalendar();
+
+            // モーダルを閉じる
             document.getElementById('campaignForm').reset();
             document.getElementById('otherMemberName').style.display = 'none';
             document.getElementById('campaignModal').style.display = 'none';
+
+            // Supabase同期（バックグラウンド）
+            if (window.editingCampaignId) {
+                const event = events.find(e => e.id === window.editingCampaignId);
+                if (event) updateEventInSupabase(event).catch(() => {});
+            } else {
+                const lastEvent = events[events.length - 1];
+                if (lastEvent) saveEventToSupabase(lastEvent).catch(() => {});
+            }
+
+            window.editingCampaignId = null;
         } catch (error) {
             console.error('特拡保存エラー:', error);
-            alert('特拡データの保存に失敗しました。もう一度お試しください。');
+            alert('保存に失敗しました');
         }
     });
 
@@ -1088,21 +1103,30 @@ function setupModalListeners() {
     });
 
     // 特拡削除ボタン
-    document.getElementById('deleteCampaign').addEventListener('click', async () => {
-        if (confirm('この特拡を削除しますか？')) {
-            if (window.editingCampaignId) {
-                events = events.filter(e => e.id !== window.editingCampaignId);
+    document.getElementById('deleteCampaign').addEventListener('click', () => {
+        if (!window.editingCampaignId) return;
 
-                // まずローカルで削除してカレンダーを更新
+        if (confirm('この特拡を削除しますか？')) {
+            try {
+                const deletedId = window.editingCampaignId;
+
+                // 削除実行
+                events = events.filter(e => e.id !== deletedId);
+
+                // ローカル保存とカレンダー更新
                 saveEvents();
                 renderCalendar();
-                window.editingCampaignId = null;
+
+                // モーダルを閉じる
                 document.getElementById('campaignModal').style.display = 'none';
 
-                // Supabase削除（エラーが出ても続行）
-                deleteEventFromSupabase(window.editingCampaignId).catch(error => {
-                    console.error('Supabase削除エラー:', error);
-                });
+                // Supabase削除（バックグラウンド）
+                deleteEventFromSupabase(deletedId).catch(() => {});
+
+                window.editingCampaignId = null;
+            } catch (error) {
+                console.error('特拡削除エラー:', error);
+                alert('削除に失敗しました');
             }
         }
     });
