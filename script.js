@@ -939,17 +939,31 @@ function setupModalListeners() {
             const index = events.findIndex(e => e.id === editingEventId);
             if (index !== -1) {
                 events[index] = { ...events[index], ...eventData };
-                await updateEventInSupabase(events[index]);
+
+                // まずローカルに保存してカレンダーを更新
+                saveEvents();
+                renderCalendar();
+
+                // Supabase更新（エラーが出ても続行）
+                updateEventInSupabase(events[index]).catch(error => {
+                    console.error('Supabase更新エラー:', error);
+                });
             }
         } else {
             // 新規作成
             eventData.id = Date.now().toString();
             events.push(eventData);
-            await saveEventToSupabase(eventData);
+
+            // まずローカルに保存してカレンダーを更新
+            saveEvents();
+            renderCalendar();
+
+            // Supabase保存（エラーが出ても続行）
+            saveEventToSupabase(eventData).catch(error => {
+                console.error('Supabase保存エラー:', error);
+            });
         }
 
-        saveEvents();
-        renderCalendar(); // 自動的にカレンダーを更新
         document.getElementById('eventModal').style.display = 'none';
     });
 
@@ -957,10 +971,16 @@ function setupModalListeners() {
     document.getElementById('deleteEvent').addEventListener('click', async () => {
         if (confirm('このイベントを削除しますか？')) {
             events = events.filter(e => e.id !== editingEventId);
-            await deleteEventFromSupabase(editingEventId);
+
+            // まずローカルで削除してカレンダーを更新
             saveEvents();
             renderCalendar();
             document.getElementById('eventModal').style.display = 'none';
+
+            // Supabase削除（エラーが出ても続行）
+            deleteEventFromSupabase(editingEventId).catch(error => {
+                console.error('Supabase削除エラー:', error);
+            });
         }
     });
 
@@ -994,7 +1014,15 @@ function setupModalListeners() {
                         campaignMembers: members,
                         note: document.getElementById('campaignNote').value || ''
                     };
-                    await updateEventInSupabase(events[index]);
+
+                    // まずローカルに保存してカレンダーを更新
+                    saveEvents();
+                    renderCalendar();
+
+                    // Supabase更新（エラーが出ても続行）
+                    updateEventInSupabase(events[index]).catch(error => {
+                        console.error('Supabase更新エラー:', error);
+                    });
                 }
                 window.editingCampaignId = null;
             } else {
@@ -1016,11 +1044,16 @@ function setupModalListeners() {
                 events = events.filter(e => !(e.date === date && e.isCampaign));
 
                 events.push(campaignData);
-                await saveEventToSupabase(campaignData);
-            }
 
-            saveEvents();
-            renderCalendar(); // 自動的にカレンダーを更新
+                // まずローカルに保存してカレンダーを更新
+                saveEvents();
+                renderCalendar();
+
+                // Supabase保存（エラーが出ても続行）
+                saveEventToSupabase(campaignData).catch(error => {
+                    console.error('Supabase保存エラー:', error);
+                });
+            }
 
             // フォームをリセット
             document.getElementById('campaignForm').reset();
@@ -1059,11 +1092,17 @@ function setupModalListeners() {
         if (confirm('この特拡を削除しますか？')) {
             if (window.editingCampaignId) {
                 events = events.filter(e => e.id !== window.editingCampaignId);
-                await deleteEventFromSupabase(window.editingCampaignId);
+
+                // まずローカルで削除してカレンダーを更新
                 saveEvents();
                 renderCalendar();
                 window.editingCampaignId = null;
                 document.getElementById('campaignModal').style.display = 'none';
+
+                // Supabase削除（エラーが出ても続行）
+                deleteEventFromSupabase(window.editingCampaignId).catch(error => {
+                    console.error('Supabase削除エラー:', error);
+                });
             }
         }
     });
@@ -1214,7 +1253,7 @@ async function syncData() {
 async function saveEventToSupabase(event) {
     if (!supabase) {
         console.error('Supabaseが初期化されていません');
-        alert('データベース接続エラーです。ページをリロードしてください。');
+        // アラートを表示せず、ローカル保存のみで継続
         return;
     }
 
@@ -1263,7 +1302,7 @@ async function saveEventToSupabase(event) {
 
         if (error) {
             console.error('Supabase保存エラー:', error);
-            alert(`データ保存に失敗しました: ${error.message}`);
+            // アラートを表示せず、エラーをログのみ
             throw error;
         } else {
             console.log('保存成功:', data);
@@ -1273,7 +1312,8 @@ async function saveEventToSupabase(event) {
 
     } catch (error) {
         console.error('イベント保存エラー:', error);
-        alert('データ保存に失敗しました。もう一度お試しください。');
+        // アラートを表示せず、エラーをthrow
+        throw error;
     }
 }
 

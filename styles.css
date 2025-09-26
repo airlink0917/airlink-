@@ -491,9 +491,8 @@ main {
 }
 
 .calendar-row.has-campaign .date-cell {
+    /* 通常の日付セルと同じサイズを維持 */
     flex-shrink: 0;
-    min-width: 80px;
-    max-width: 80px;
 }
 
 .calendar-row.has-campaign .campaign-cell-wide {
