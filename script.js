@@ -70,9 +70,11 @@ function initializeUI() {
     // 現在月表示
     updateMonthDisplay();
 
-    // スタッフ初期化（表示はしない）
+    // スタッフ初期化（デフォルト値を設定）
     if (!staffMembers || staffMembers.length === 0) {
-        staffMembers = [];
+        // LocalStorageにデータがない場合はデフォルトのスタッフを設定
+        staffMembers = ['大西', '小林', '上田', '北野', '大浜'];
+        saveStaffMembers(false);
     }
 
     // モバイルデバイスの場合、viewport設定
