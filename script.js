@@ -14,6 +14,9 @@ let events = [];
 let staffMembers = [];
 let editingEventId = null;
 
+// 同期設定（ミリ秒単位）
+const SYNC_INTERVAL = 15000; // 15秒固定
+
 // ===================================
 // モバイルデバイス検出
 // ===================================
@@ -47,11 +50,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Supabaseから最新データを取得
     await syncData();
 
-    // 定期同期を設定（30秒ごと）
+    // 定期同期を設定（15秒ごと）
     setInterval(() => {
-        console.log('定期同期実行');
+        console.log('定期同期実行 (間隔: 15秒)');
         syncData();
-    }, 30000);
+    }, SYNC_INTERVAL);
+    console.log('自動同期を15秒間隔で開始');
 
     // ページ表示時に強制同期
     document.addEventListener('visibilitychange', () => {
@@ -1342,6 +1346,9 @@ async function syncData() {
             // エラー表示をクリア
             syncStatus.textContent = '';
         }
+
+        // 最終同期時刻を保存
+        localStorage.setItem('lastSyncTime', new Date().toISOString());
     }
 }
 
