@@ -492,11 +492,15 @@ main {
 
 .calendar-row.has-campaign .date-cell {
     flex-shrink: 0;
+    min-width: 80px;
+    max-width: 80px;
 }
 
 .calendar-row.has-campaign .campaign-cell-wide {
-    flex: 1;
-    width: 100%;
+    flex: 1 1 auto;
+    width: auto !important;
+    min-width: auto !important;
+    max-width: none !important;
 }
 
 .campaign-cell-wide {
@@ -504,10 +508,15 @@ main {
     padding: 8px 10px;
     font-weight: bold;
     border: 2px solid rgba(0, 0, 0, 0.1);
+    border-left: none;
     min-height: 50px;
-    display: flex;
+    display: flex !important;
     align-items: center;
     justify-content: center;
+    /* 通常のcalendar-cellスタイルをオーバーライド */
+    min-width: auto !important;
+    max-width: none !important;
+    width: 100% !important;
 }
 
 .campaign-info {
