@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>デバッグチェック</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>日程システム デバッグチェック</h1>
+
+    <h2>LocalStorageデータ確認：</h2>
+    <div id="storage-check"></div>
+
+    <h2>スタッフメンバー：</h2>
+    <div id="staff-check"></div>
+
+    <h2>イベントデータ：</h2>
+    <div id="events-check"></div>
+
+    <hr>
+    <button onclick="clearData()">データをクリア（注意）</button>
+    <button onclick="setTestData()">テストデータをセット</button>
+
+    <script>
+        // LocalStorageのデータを確認
+        function checkData() {
+            const storageDiv = document.getElementById('storage-check');
+            const staffDiv = document.getElementById('staff-check');
+            const eventsDiv = document.getElementById('events-check');
+
+            // スタッフメンバー確認
+            const staffMembers = localStorage.getItem('staffMembers');
+            if (staffMembers) {
+                const staff = JSON.parse(staffMembers);
+                staffDiv.innerHTML = `<pre>${JSON.stringify(staff, null, 2)}</pre>`;
+                console.log('Staff Members:', staff);
+            } else {
+                staffDiv.innerHTML = '<p style="color: red;">スタッフデータなし</p>';
+            }
+
+            // イベント確認
+            const events = localStorage.getItem('scheduleEvents');
+            if (events) {
+                const eventData = JSON.parse(events);
+                eventsDiv.innerHTML = `<p>イベント数: ${eventData.length}</p><pre>${JSON.stringify(eventData.slice(0, 5), null, 2)}</pre>`;
+                console.log('Events:', eventData);
+            } else {
+                eventsDiv.innerHTML = '<p style="color: red;">イベントデータなし</p>';
+            }
+
+            // 全LocalStorageキー表示
+            const keys = Object.keys(localStorage);
+            storageDiv.innerHTML = `<p>保存されているキー: ${keys.join(', ')}</p>`;
+        }
+
+        // データクリア
+        function clearData() {
+            if (confirm('本当にすべてのデータをクリアしますか？')) {
+                localStorage.clear();
+                alert('データをクリアしました');
+                location.reload();
+            }
+        }
+
+        // テストデータセット
+        function setTestData() {
+            // テスト用スタッフ
+            const testStaff = ['大西', '小林', '上田', '北野', '大浜'];
+            localStorage.setItem('staffMembers', JSON.stringify(testStaff));
+
+            // テスト用イベント
+            const today = new Date();
+            const testEvents = [
+                {
+                    id: 'test_' + Date.now(),
+                    date: today.toISOString().split('T')[0],
+                    title: 'テストイベント',
+                    person: 'staff-0',
+                    color: '#E1BEE7',
+                    note: 'テスト',
+                    isCampaign: false
+                }
+            ];
+            localStorage.setItem('scheduleEvents', JSON.stringify(testEvents));
+
+            alert('テストデータをセットしました');
+            location.reload();
+        }
+
+        // 初期チェック
+        checkData();
+    </script>
+</body>
+</html>
