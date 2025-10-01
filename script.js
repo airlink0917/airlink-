@@ -47,31 +47,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     // UI初期化
     initializeUI();
 
-    // Supabaseから最新データを取得 - 一時無効化
-    // await syncData();
-    console.log('初回同期をスキップ');
+    // Supabaseから最新データを取得
+    await syncData();
+    console.log('初回同期完了');
 
     // 定期同期を設定（10秒ごと）
-    // 一時的に無効化して問題を特定
-    // setInterval(async () => {
-    //     console.log('定期同期実行 (間隔: 10秒)');
-    //     await syncData();
-    // }, SYNC_INTERVAL);
-    console.log('自動同期を一時的に無効化');
+    setInterval(async () => {
+        console.log('定期同期実行 (間隔: 10秒)');
+        await syncData();
+    }, SYNC_INTERVAL);
+    console.log('自動同期を有効化（論理削除対応済み）');
 
-    // ページ表示時に強制同期 - 一時無効化
-    // document.addEventListener('visibilitychange', async () => {
-    //     if (!document.hidden) {
-    //         console.log('ページが表示されました。同期を開始します。');
-    //         await syncData();
-    //     }
-    // });
+    // ページ表示時に強制同期
+    document.addEventListener('visibilitychange', async () => {
+        if (!document.hidden) {
+            console.log('ページが表示されました。同期を開始します。');
+            await syncData();
+        }
+    });
 
-    // // フォーカス時にも同期 - 一時無効化
-    // window.addEventListener('focus', async () => {
-    //     console.log('ウィンドウがフォーカスされました。同期を開始します。');
-    //     await syncData();
-    // });
+    // フォーカス時にも同期
+    window.addEventListener('focus', async () => {
+        console.log('ウィンドウがフォーカスされました。同期を開始します。');
+        await syncData();
+    });
 
     console.log('初期化完了');
 });
@@ -1112,9 +1111,10 @@ function setupModalListeners() {
                     if (checkData) {
                         console.log('削除対象を確認:', checkData);
 
+                        // 論理削除: is_deletedフラグをtrueに設定
                         const { data, error } = await supabase
                             .from('schedule_events')
-                            .delete()
+                            .update({ is_deleted: true })
                             .eq('event_id', deletedId)
                             .eq('user_id', USER_ID)
                             .select();
@@ -1123,7 +1123,7 @@ function setupModalListeners() {
                             console.error('Supabase削除エラー:', error);
                             alert('クラウドからの削除に失敗しました。ページをリロードしてください。');
                         } else {
-                            console.log('Supabase削除成功:', data);
+                            console.log('Supabase論理削除成功:', data);
                         }
                     } else {
                         console.log('削除対象がSupabaseに存在しない:', deletedId);
@@ -1225,7 +1225,8 @@ function setupModalListeners() {
                     color: savedCampaign.color || null,
                     note: savedCampaign.note || null,
                     is_campaign: true,
-                    campaign_members: savedCampaign.campaignMembers || []
+                    campaign_members: savedCampaign.campaignMembers || [],
+                    is_deleted: false  // 新規作成・更新時は必ずfalse
                 };
 
                 const { data, error } = await supabase
@@ -1315,21 +1316,22 @@ function setupModalListeners() {
             document.getElementById('campaignModal').style.display = 'none';
             window.editingCampaignId = null;
 
-            // 4. Supabaseから即座に削除（完了を待つ）
+            // 4. Supabaseで論理削除（is_deletedフラグを設定）
             try {
                 if (supabase) {
-                    console.log('Supabaseから特拡削除中...', deletedId);
-                    const { error } = await supabase
+                    console.log('Supabaseで特拡を論理削除中...', deletedId);
+                    const { data, error } = await supabase
                         .from('schedule_events')
-                        .delete()
+                        .update({ is_deleted: true })
                         .eq('event_id', deletedId)
-                        .eq('user_id', USER_ID);
+                        .eq('user_id', USER_ID)
+                        .select();
 
                     if (error) {
                         console.error('Supabase特拡削除エラー:', error);
                         // エラーでもローカル削除は維持
                     } else {
-                        console.log('Supabase特拡削除成功:', deletedId);
+                        console.log('Supabase特拡論理削除成功:', data);
                     }
                 }
             } catch (err) {
@@ -1417,11 +1419,12 @@ async function syncData() {
 
         console.log('Supabase同期開始');
 
-        // Supabaseからデータ取得
+        // Supabaseからデータ取得（削除されていないもののみ）
         const { data: eventData, error: eventError } = await supabase
             .from('schedule_events')
             .select('*')
-            .eq('user_id', USER_ID);
+            .eq('user_id', USER_ID)
+            .eq('is_deleted', false);  // 論理削除されていないデータのみ取得
 
         if (eventError) {
             console.error('イベント取得エラー:', eventError);
@@ -1545,7 +1548,8 @@ async function saveEventToSupabase(event) {
             color: event.color || null,
             note: event.note || null,
             is_campaign: event.isCampaign || false,
-            campaign_members: event.campaignMembers || []
+            campaign_members: event.campaignMembers || [],
+            is_deleted: false  // 新規作成・更新時は必ずfalse
         };
 
         console.log('保存データ:', eventData);
@@ -1590,7 +1594,8 @@ async function updateEventInSupabase(event) {
             color: event.color || null,
             note: event.note || null,
             is_campaign: event.isCampaign || false,
-            campaign_members: event.campaignMembers || []
+            campaign_members: event.campaignMembers || [],
+            is_deleted: false  // 新規作成・更新時は必ずfalse
         };
 
         // upsertで更新

@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>論理削除テスト</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button.delete {
+            background: #f44336;
+        }
+        button.delete:hover {
+            background: #da190b;
+        }
+        .event-list {
+            margin-top: 10px;
+        }
+        .event-item {
+            background: #f9f9f9;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            border-left: 4px solid #2196F3;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .event-item.deleted {
+            background: #ffebee;
+            border-left-color: #f44336;
+            opacity: 0.6;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .test-results {
+            margin-top: 20px;
+        }
+        .test-result {
+            padding: 5px 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+        .test-result.pass {
+            background: #d4edda;
+            color: #155724;
+        }
+        .test-result.fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>📝 論理削除（is_deleted）機能テスト</h1>
+
+    <div class="section">
+        <h2>🔧 テスト準備</h2>
+        <button onclick="initializeTest()">テスト環境を初期化</button>
+        <button onclick="checkDatabase()">データベース状態を確認</button>
+        <div id="initStatus"></div>
+    </div>
+
+    <div class="section">
+        <h2>➕ テストデータ作成</h2>
+        <button onclick="createTestEvent()">テストイベントを作成</button>
+        <button onclick="createMultipleEvents()">複数イベントを一括作成</button>
+        <div id="createStatus"></div>
+    </div>
+
+    <div class="section">
+        <h2>🗑️ 削除テスト</h2>
+        <button onclick="testLogicalDelete()">論理削除を実行</button>
+        <button onclick="testPhysicalDelete()" class="delete">物理削除を実行（比較用）</button>
+        <div id="deleteStatus"></div>
+    </div>
+
+    <div class="section">
+        <h2>🔄 同期テスト</h2>
+        <button onclick="testSync()">同期処理をテスト</button>
+        <button onclick="testSyncWithDeleted()">削除済みを含めて同期</button>
+        <div id="syncStatus"></div>
+    </div>
+
+    <div class="section">
+        <h2>📋 現在のイベント一覧</h2>
+        <button onclick="loadEvents()">イベント一覧を更新</button>
+        <button onclick="loadAllEvents()">削除済みも含めて表示</button>
+        <div id="eventList" class="event-list"></div>
+    </div>
+
+    <div class="section">
+        <h2>🧪 自動テスト実行</h2>
+        <button onclick="runAllTests()">すべてのテストを実行</button>
+        <div id="testResults" class="test-results"></div>
+    </div>
+
+    <script>
+        // Supabase設定
+        const SUPABASE_URL = 'https://igjkroqjhwhewtrprhds.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlnamtyb3FqaHdoZXd0cnByaGRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyNTQ5ODEsImV4cCI6MjA3MzgzMDk4MX0.7pD4mWSbr8FvGKIjkNSrQuLdUPISxayZGANZ27TuqzI';
+        const USER_ID = 'test_user_' + Date.now(); // テスト用ユーザーID
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let testEvents = [];
+
+        // 初期化
+        async function initializeTest() {
+            showStatus('initStatus', '初期化中...', 'info');
+
+            try {
+                // テストユーザーの既存データをクリーンアップ
+                const { error } = await supabase
+                    .from('schedule_events')
+                    .delete()
+                    .eq('user_id', USER_ID);
+
+                if (error) throw error;
+
+                showStatus('initStatus', `テスト環境を初期化しました（USER_ID: ${USER_ID}）`, 'success');
+                loadEvents();
+            } catch (error) {
+                showStatus('initStatus', 'エラー: ' + error.message, 'error');
+            }
+        }
+
+        // データベース状態確認
+        async function checkDatabase() {
+            showStatus('initStatus', '確認中...', 'info');
+
+            try {
+                // カラムの存在確認
+                const { data, error } = await supabase
+                    .from('schedule_events')
+                    .select('*')
+                    .limit(1);
+
+                if (error) throw error;
+
+                const hasIsDeleted = data.length > 0 ? 'is_deleted' in data[0] : 'データなし';
+                showStatus('initStatus',
+                    `データベース状態:\n- is_deletedカラム: ${hasIsDeleted}\n- テーブル接続: 正常`,
+                    'success');
+            } catch (error) {
+                showStatus('initStatus', 'エラー: ' + error.message, 'error');
+            }
+        }
+
+        // テストイベント作成
+        async function createTestEvent() {
+            const eventId = 'test_' + Date.now();
+            const eventData = {
+                user_id: USER_ID,
+                event_id: eventId,
+                title: 'テストイベント ' + new Date().toLocaleTimeString(),
+                date: new Date().toISOString().split('T')[0],
+                time: '10:00',
+                person: 'テスト担当者',
+                color: '#4CAF50',
+                note: 'これはテストイベントです',
+                is_campaign: false,
+                campaign_members: [],
+                is_deleted: false
+            };
+
+            try {
+                const { data, error } = await supabase
+                    .from('schedule_events')
+                    .insert(eventData)
+                    .select();
+
+                if (error) throw error;
+
+                showStatus('createStatus', `イベントを作成しました（ID: ${eventId}）`, 'success');
+                loadEvents();
+            } catch (error) {
+                showStatus('createStatus', 'エラー: ' + error.message, 'error');
+            }
+        }
+
+        // 複数イベント作成
+        async function createMultipleEvents() {
+            const events = [];
+            for (let i = 0; i < 5; i++) {
+                events.push({
+                    user_id: USER_ID,
+                    event_id: 'bulk_' + Date.now() + '_' + i,
+                    title: `イベント ${i + 1}`,
+                    date: new Date().toISOString().split('T')[0],
+                    time: `${10 + i}:00`,
+                    person: `担当者${i + 1}`,
+                    color: ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#F44336'][i],
+                    note: `テストイベント ${i + 1}`,
+                    is_campaign: false,
+                    campaign_members: [],
+                    is_deleted: false
+                });
+            }
+
+            try {
+                const { data, error } = await supabase
+                    .from('schedule_events')
+                    .insert(events)
+                    .select();
+
+                if (error) throw error;
+
+                showStatus('createStatus', `${events.length}個のイベントを作成しました`, 'success');
+                loadEvents();
+            } catch (error) {
+                showStatus('createStatus', 'エラー: ' + error.message, 'error');
+            }
+        }
+
+        // 論理削除テスト
+        async function testLogicalDelete() {
+            try {
+                // 最初のイベントを取得
+                const { data: events, error: fetchError } = await supabase
+                    .from('schedule_events')
+                    .select('*')
+                    .eq('user_id', USER_ID)
+                    .eq('is_deleted', false)
+                    .limit(1);
+
+                if (fetchError) throw fetchError;
+
+                if (!events || events.length === 0) {
+                    showStatus('deleteStatus', '削除するイベントがありません', 'error');
+                    return;
+                }
+
+                const targetEvent = events[0];
+
+                // 論理削除実行
+                const { data, error } = await supabase
+                    .from('schedule_events')
+                    .update({ is_deleted: true })
+                    .eq('event_id', targetEvent.event_id)
+                    .eq('user_id', USER_ID)
+                    .select();
+
+                if (error) throw error;
+
+                showStatus('deleteStatus',
+                    `論理削除成功: ${targetEvent.title} (ID: ${targetEvent.event_id})`,
+                    'success');
+                loadEvents();
+            } catch (error) {
+                showStatus('deleteStatus', 'エラー: ' + error.message, 'error');
+            }
+        }
+
+        // 物理削除テスト（比較用）
+        async function testPhysicalDelete() {
+            if (!confirm('物理削除は元に戻せません。実行しますか？')) return;
+
+            try {
+                const { data: events, error: fetchError } = await supabase
+                    .from('schedule_events')
+                    .select('*')
+                    .eq('user_id', USER_ID)
+                    .limit(1);
+
+                if (fetchError) throw fetchError;
+
+                if (!events || events.length === 0) {
+                    showStatus('deleteStatus', '削除するイベントがありません', 'error');
+                    return;
+                }
+
+                const targetEvent = events[0];
+
+                const { error } = await supabase
+                    .from('schedule_events')
+                    .delete()
+                    .eq('event_id', targetEvent.event_id)
+                    .eq('user_id', USER_ID);
+
+                if (error) throw error;
+
+                showStatus('deleteStatus',
+                    `物理削除成功: ${targetEvent.title} (ID: ${targetEvent.event_id})`,
+                    'success');
+                loadEvents();
+            } catch (error) {
+                showStatus('deleteStatus', 'エラー: ' + error.message, 'error');
+            }
+        }
+
+        // 同期テスト
+        async function testSync() {
+            showStatus('syncStatus', '同期中...', 'info');
+
+            try {
+                const { data, error } = await supabase
+                    .from('schedule_events')
+                    .select('*')
+                    .eq('user_id', USER_ID)
+                    .eq('is_deleted', false); // 削除されていないものだけ
+
+                if (error) throw error;
+
+                testEvents = data;
+                showStatus('syncStatus',
+                    `同期完了: ${data.length}件のアクティブなイベントを取得`,
+                    'success');
+                displayEvents(data);
+            } catch (error) {
+                showStatus('syncStatus', 'エラー: ' + error.message, 'error');
+            }
+        }
+
+        // 削除済みを含めて同期
+        async function testSyncWithDeleted() {
+            showStatus('syncStatus', '同期中（削除済み含む）...', 'info');
+
+            try {
+                const { data, error } = await supabase
+                    .from('schedule_events')
+                    .select('*')
+                    .eq('user_id', USER_ID);
+
+                if (error) throw error;
+
+                const activeCount = data.filter(e => !e.is_deleted).length;
+                const deletedCount = data.filter(e => e.is_deleted).length;
+
+                showStatus('syncStatus',
+                    `同期完了: 合計${data.length}件（アクティブ: ${activeCount}件、削除済み: ${deletedCount}件）`,
+                    'success');
+                displayEvents(data, true);
+            } catch (error) {
+                showStatus('syncStatus', 'エラー: ' + error.message, 'error');
+            }
+        }
+
+        // イベント一覧表示
+        async function loadEvents() {
+            try {
+                const { data, error } = await supabase
+                    .from('schedule_events')
+                    .select('*')
+                    .eq('user_id', USER_ID)
+                    .eq('is_deleted', false)
+                    .order('date', { ascending: true });
+
+                if (error) throw error;
+
+                displayEvents(data);
+            } catch (error) {
+                console.error('エラー:', error);
+                displayEvents([]);
+            }
+        }
+
+        // すべてのイベント表示
+        async function loadAllEvents() {
+            try {
+                const { data, error } = await supabase
+                    .from('schedule_events')
+                    .select('*')
+                    .eq('user_id', USER_ID)
+                    .order('date', { ascending: true });
+
+                if (error) throw error;
+
+                displayEvents(data, true);
+            } catch (error) {
+                console.error('エラー:', error);
+                displayEvents([]);
+            }
+        }
+
+        // イベント表示
+        function displayEvents(events, showDeleted = false) {
+            const listEl = document.getElementById('eventList');
+
+            if (!events || events.length === 0) {
+                listEl.innerHTML = '<p>イベントがありません</p>';
+                return;
+            }
+
+            listEl.innerHTML = events.map(event => `
+                <div class="event-item ${event.is_deleted ? 'deleted' : ''}">
+                    <div>
+                        <strong>${event.title}</strong>
+                        (${event.date} ${event.time || ''})
+                        ${event.is_deleted ? ' <span style="color:red">[削除済み]</span>' : ''}
+                        <br>
+                        <small>ID: ${event.event_id} | 担当: ${event.person || '-'}</small>
+                    </div>
+                    ${!event.is_deleted ?
+                        `<button onclick="deleteEvent('${event.event_id}')" class="delete">削除</button>` :
+                        `<button onclick="restoreEvent('${event.event_id}')">復元</button>`
+                    }
+                </div>
+            `).join('');
+        }
+
+        // 個別削除
+        async function deleteEvent(eventId) {
+            try {
+                const { error } = await supabase
+                    .from('schedule_events')
+                    .update({ is_deleted: true })
+                    .eq('event_id', eventId)
+                    .eq('user_id', USER_ID);
+
+                if (error) throw error;
+
+                loadEvents();
+            } catch (error) {
+                alert('削除エラー: ' + error.message);
+            }
+        }
+
+        // 復元
+        async function restoreEvent(eventId) {
+            try {
+                const { error } = await supabase
+                    .from('schedule_events')
+                    .update({ is_deleted: false })
+                    .eq('event_id', eventId)
+                    .eq('user_id', USER_ID);
+
+                if (error) throw error;
+
+                loadAllEvents();
+            } catch (error) {
+                alert('復元エラー: ' + error.message);
+            }
+        }
+
+        // 自動テスト
+        async function runAllTests() {
+            const resultsEl = document.getElementById('testResults');
+            resultsEl.innerHTML = '<h3>テスト実行中...</h3>';
+
+            const results = [];
+
+            // テスト1: データベース接続
+            try {
+                const { error } = await supabase
+                    .from('schedule_events')
+                    .select('*')
+                    .limit(1);
+                results.push({ test: 'データベース接続', pass: !error });
+            } catch {
+                results.push({ test: 'データベース接続', pass: false });
+            }
+
+            // テスト2: イベント作成
+            try {
+                const { error } = await supabase
+                    .from('schedule_events')
+                    .insert({
+                        user_id: USER_ID,
+                        event_id: 'auto_test_' + Date.now(),
+                        title: '自動テスト',
+                        date: new Date().toISOString().split('T')[0],
+                        is_deleted: false
+                    });
+                results.push({ test: 'イベント作成', pass: !error });
+            } catch {
+                results.push({ test: 'イベント作成', pass: false });
+            }
+
+            // テスト3: 論理削除
+            try {
+                const { data: events } = await supabase
+                    .from('schedule_events')
+                    .select('*')
+                    .eq('user_id', USER_ID)
+                    .eq('is_deleted', false)
+                    .limit(1);
+
+                if (events && events.length > 0) {
+                    const { error } = await supabase
+                        .from('schedule_events')
+                        .update({ is_deleted: true })
+                        .eq('event_id', events[0].event_id);
+                    results.push({ test: '論理削除', pass: !error });
+                } else {
+                    results.push({ test: '論理削除', pass: false });
+                }
+            } catch {
+                results.push({ test: '論理削除', pass: false });
+            }
+
+            // テスト4: 削除フィルタリング
+            try {
+                const { data: activeEvents } = await supabase
+                    .from('schedule_events')
+                    .select('*')
+                    .eq('user_id', USER_ID)
+                    .eq('is_deleted', false);
+
+                const { data: allEvents } = await supabase
+                    .from('schedule_events')
+                    .select('*')
+                    .eq('user_id', USER_ID);
+
+                const hasDeleted = allEvents.some(e => e.is_deleted);
+                const activeFiltered = !activeEvents.some(e => e.is_deleted);
+
+                results.push({
+                    test: '削除フィルタリング',
+                    pass: (!hasDeleted || activeFiltered)
+                });
+            } catch {
+                results.push({ test: '削除フィルタリング', pass: false });
+            }
+
+            // 結果表示
+            resultsEl.innerHTML = `
+                <h3>テスト結果</h3>
+                ${results.map(r => `
+                    <div class="test-result ${r.pass ? 'pass' : 'fail'}">
+                        ${r.pass ? '✅' : '❌'} ${r.test}
+                    </div>
+                `).join('')}
+                <p style="margin-top:10px">
+                    合計: ${results.length}件 |
+                    成功: ${results.filter(r => r.pass).length}件 |
+                    失敗: ${results.filter(r => !r.pass).length}件
+                </p>
+            `;
+        }
+
+        // ステータス表示
+        function showStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="status ${type}">${message}</div>`;
+
+            if (type !== 'info') {
+                setTimeout(() => {
+                    element.innerHTML = '';
+                }, 5000);
+            }
+        }
+
+        // 初期ロード
+        window.addEventListener('DOMContentLoaded', () => {
+            loadEvents();
+            checkDatabase();
+        });
+    </script>
+</body>
+</html>
