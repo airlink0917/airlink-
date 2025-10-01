@@ -1,0 +1,4 @@
+-- ユニーク制約を追加（user_idとevent_idの組み合わせ）
+ALTER TABLE schedule_events
+ADD CONSTRAINT unique_user_event
+UNIQUE (user_id, event_id);

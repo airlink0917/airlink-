@@ -1,0 +1,28 @@
+-- ===================================
+-- 重複データを削除してユニーク制約を追加
+-- ===================================
+
+-- 1. まず重複データを確認
+SELECT user_id, event_id, COUNT(*) as count
+FROM schedule_events
+GROUP BY user_id, event_id
+HAVING COUNT(*) > 1;
+
+-- 2. 重複データを削除（最新のものだけ残す）
+DELETE FROM schedule_events
+WHERE id NOT IN (
+    SELECT MAX(id)
+    FROM schedule_events
+    GROUP BY user_id, event_id
+);
+
+-- 3. ユニーク制約を追加
+ALTER TABLE schedule_events
+ADD CONSTRAINT unique_user_event
+UNIQUE (user_id, event_id);
+
+-- 4. 制約が追加されたことを確認
+SELECT conname, contype
+FROM pg_constraint
+WHERE conrelid = 'schedule_events'::regclass
+AND contype = 'u';

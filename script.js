@@ -1554,12 +1554,31 @@ async function saveEventToSupabase(event) {
 
         console.log('保存データ:', eventData);
 
-        // upsert（挿入または更新）を使用して簡潔に
-        const { data, error } = await supabase
+        // まず既存データを確認
+        const { data: existing } = await supabase
             .from('schedule_events')
-            .upsert(eventData, {
-                onConflict: 'user_id,event_id'
-            });
+            .select('id')
+            .eq('user_id', USER_ID)
+            .eq('event_id', event.id)
+            .single();
+
+        let data, error;
+
+        if (existing) {
+            // 更新
+            ({ data, error } = await supabase
+                .from('schedule_events')
+                .update(eventData)
+                .eq('user_id', USER_ID)
+                .eq('event_id', event.id)
+                .select());
+        } else {
+            // 新規作成
+            ({ data, error } = await supabase
+                .from('schedule_events')
+                .insert(eventData)
+                .select());
+        }
 
         if (error) {
             console.error('Supabase保存エラー:', error);
@@ -1598,12 +1617,13 @@ async function updateEventInSupabase(event) {
             is_deleted: false  // 新規作成・更新時は必ずfalse
         };
 
-        // upsertで更新
+        // 更新処理
         const { data, error } = await supabase
             .from('schedule_events')
-            .upsert(eventData, {
-                onConflict: 'user_id,event_id'
-            });
+            .update(eventData)
+            .eq('user_id', USER_ID)
+            .eq('event_id', event.id)
+            .select();
 
         if (error) {
             console.error('Supabase更新エラー:', error);
