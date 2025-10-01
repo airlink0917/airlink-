@@ -1033,19 +1033,44 @@ function setupModalListeners() {
                     color: savedEvent.color || null,
                     note: savedEvent.note || null,
                     is_campaign: savedEvent.isCampaign || false,
-                    campaign_members: savedEvent.campaignMembers || []
+                    campaign_members: savedEvent.campaignMembers || [],
+                    is_deleted: false  // 新規作成・更新時は必ずfalse
                 };
 
-                const { data, error } = await supabase
+                // まず既存データを確認
+                const { data: existing } = await supabase
                     .from('schedule_events')
-                    .upsert(eventDataForSupabase, {
-                        onConflict: 'user_id,event_id'
-                    })
-                    .select();
+                    .select('id')
+                    .eq('user_id', USER_ID)
+                    .eq('event_id', savedEvent.id)
+                    .single();
+
+                let data, error;
+
+                if (existing) {
+                    // 更新
+                    ({ data, error } = await supabase
+                        .from('schedule_events')
+                        .update(eventDataForSupabase)
+                        .eq('user_id', USER_ID)
+                        .eq('event_id', savedEvent.id)
+                        .select());
+                } else {
+                    // 新規作成
+                    ({ data, error } = await supabase
+                        .from('schedule_events')
+                        .insert(eventDataForSupabase)
+                        .select());
+                }
 
                 if (error) {
                     console.error('Supabase保存エラー:', error);
-                    alert('クラウドへの保存に失敗しました。ローカルにのみ保存されています。');
+                    console.error('エラー詳細:', error.message, error.details, error.hint);
+                    // モバイルでは詳細なエラーを表示
+                    if (isMobileDevice()) {
+                        console.error('モバイル保存エラー - event_id:', savedEvent.id);
+                    }
+                    alert('クラウドへの保存に失敗しました。ローカルにのみ保存されています。\n\nエラー: ' + error.message);
                 } else {
                     console.log('Supabase保存成功:', data);
                 }
