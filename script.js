@@ -1254,12 +1254,31 @@ function setupModalListeners() {
                     is_deleted: false  // 新規作成・更新時は必ずfalse
                 };
 
-                const { data, error } = await supabase
+                // まず既存データを確認
+                const { data: existing } = await supabase
                     .from('schedule_events')
-                    .upsert(campaignDataForSupabase, {
-                        onConflict: 'user_id,event_id'
-                    })
-                    .select();
+                    .select('id')
+                    .eq('user_id', USER_ID)
+                    .eq('event_id', savedCampaign.id)
+                    .single();
+
+                let data, error;
+
+                if (existing) {
+                    // 更新
+                    ({ data, error } = await supabase
+                        .from('schedule_events')
+                        .update(campaignDataForSupabase)
+                        .eq('user_id', USER_ID)
+                        .eq('event_id', savedCampaign.id)
+                        .select());
+                } else {
+                    // 新規作成
+                    ({ data, error } = await supabase
+                        .from('schedule_events')
+                        .insert(campaignDataForSupabase)
+                        .select());
+                }
 
                 if (error) {
                     console.error('特拡保存エラー:', error);
