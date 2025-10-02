@@ -1495,16 +1495,18 @@ async function syncData() {
 
             // ローカルデータをSupabaseデータで完全に置き換え
             const oldLength = events.length;
+            const oldEventsJson = JSON.stringify(events);
             events = supabaseEvents;
             const newLength = events.length;
+            const newEventsJson = JSON.stringify(events);
 
             console.log(`同期: ローカル${oldLength}件 → Supabase${newLength}件`);
 
             // LocalStorageを更新
             saveEvents();
 
-            // カレンダーを再描画
-            if (oldLength !== newLength) {
+            // データに変更があった場合のみカレンダーを再描画
+            if (oldEventsJson !== newEventsJson) {
                 renderCalendar();
 
                 if (syncStatus) {
