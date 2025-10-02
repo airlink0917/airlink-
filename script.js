@@ -172,11 +172,16 @@ function setupEventListeners() {
         });
     }
 
-    // 復元ボタン
+    // 復元ボタン（パスワード保護）
     const restoreBtn = document.getElementById('restoreBtn');
     if (restoreBtn) {
         restoreBtn.addEventListener('click', () => {
-            document.getElementById('restoreFileInput').click();
+            const password = prompt('復元するには管理者パスワードを入力してください:');
+            if (password === 'airlink') {
+                document.getElementById('restoreFileInput').click();
+            } else if (password !== null) {
+                alert('パスワードが正しくありません');
+            }
         });
     }
 
@@ -550,14 +555,14 @@ function renderCalendar() {
     // チェックされた（選択された）担当者のみをフィルタリング
     const selectedStaff = staffMembers.filter(name => name && name.trim() !== '');
 
-    // 担当者が設定されていない場合はカレンダーを表示しない
-    if (!selectedStaff || selectedStaff.length === 0) {
-        container.innerHTML = '<div style="text-align: center; padding: 50px; color: #999;">担当者を設定してください</div>';
-        return;
+    // 担当者が設定されていない場合はデフォルトの担当者を使用
+    let displayStaff = selectedStaff;
+    if (!displayStaff || displayStaff.length === 0) {
+        displayStaff = ['大西', '小林', '上田', '北野', '大浜'];
     }
 
-    // CSS変数でスタッフ数を設定（選択された担当者数）
-    document.documentElement.style.setProperty('--staff-count', selectedStaff.length);
+    // CSS変数でスタッフ数を設定（表示する担当者数）
+    document.documentElement.style.setProperty('--staff-count', displayStaff.length);
 
     // 祝日データを取得
     const holidays = getHolidays(year);
@@ -572,8 +577,8 @@ function renderCalendar() {
     html += '<div class="calendar-header">';
     html += '<div class="calendar-cell header-cell date-header">日付</div>';
 
-    // 選択された担当者名を表示（優先順位順）
-    selectedStaff.forEach(name => {
+    // 表示する担当者名を表示
+    displayStaff.forEach(name => {
         html += `<div class="calendar-cell header-cell">${name}</div>`;
     });
     html += '</div>';
@@ -642,10 +647,11 @@ function renderCalendar() {
             `;
         } else {
             // 通常の日は各担当者のイベントセル
-            selectedStaff.forEach(name => {
-                // staffMembers配列でのインデックスを取得
+            displayStaff.forEach((name, displayIndex) => {
+                // staffMembers配列でのインデックスを取得（または表示インデックスを使用）
                 const originalIndex = staffMembers.indexOf(name);
-                const event = events.find(e => e.date === date && e.person === `staff-${originalIndex}`);
+                const personId = originalIndex >= 0 ? `staff-${originalIndex}` : `staff-${displayIndex}`;
+                const event = events.find(e => e.date === date && e.person === personId);
 
                 if (event) {
                     // 文字数によるサイズ調整クラスを決定
@@ -676,10 +682,11 @@ function renderCalendar() {
                     `;
                 } else {
                     // 空のセル（クリックで新規作成）
+                    const indexToUse = originalIndex >= 0 ? originalIndex : displayIndex;
                     html += `
                         <div class="calendar-cell event-cell empty-cell"
                              data-date="${date}"
-                             data-person-index="${originalIndex}">
+                             data-person-index="${indexToUse}">
                         </div>
                     `;
                 }
