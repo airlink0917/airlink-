@@ -164,6 +164,14 @@ function setupEventListeners() {
         document.getElementById('campaignModal').style.display = 'block';
     });
 
+    // 手動保存ボタン
+    const manualSaveBtn = document.getElementById('manualSaveBtn');
+    if (manualSaveBtn) {
+        manualSaveBtn.addEventListener('click', async () => {
+            await manualSaveNow();
+        });
+    }
+
     // バックアップボタン
     const backupBtn = document.getElementById('backupBtn');
     if (backupBtn) {
@@ -1769,6 +1777,57 @@ window.editCampaign = editCampaign;
 // ===================================
 // バックアップと復元機能
 // ===================================
+// 手動保存機能（即座にSupabaseに保存）
+async function manualSaveNow() {
+    const btn = document.getElementById('manualSaveBtn');
+    if (!btn) return;
+
+    if (!supabase) {
+        alert('Supabaseが初期化されていません');
+        return;
+    }
+
+    try {
+        // ボタンを保存中状態に
+        btn.classList.add('saving');
+        btn.textContent = '保存中...';
+        updateSyncStatus('保存中...');
+
+        // すべてのイベントをSupabaseに保存
+        for (const event of events) {
+            await saveEventToSupabase(event);
+        }
+
+        // すべてのスタッフをSupabaseに保存
+        for (let i = 0; i < staffMembers.length; i++) {
+            if (staffMembers[i]) {
+                await saveStaffToSupabase(i, staffMembers[i]);
+            }
+        }
+
+        updateSyncStatus('保存完了');
+        alert('保存完了！他の端末にすぐ反映されます');
+
+        // ボタンを元に戻す
+        btn.classList.remove('saving');
+        btn.textContent = '手動保存';
+
+        // 3秒後に同期ステータスをリセット
+        setTimeout(() => {
+            updateSyncStatus('同期完了');
+        }, 3000);
+
+    } catch (error) {
+        console.error('手動保存エラー:', error);
+        alert('保存に失敗しました');
+        updateSyncStatus('同期エラー');
+
+        // エラー時もボタンを元に戻す
+        btn.classList.remove('saving');
+        btn.textContent = '手動保存';
+    }
+}
+
 function backupData() {
     try {
         const backupData = {

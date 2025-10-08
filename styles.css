@@ -1102,7 +1102,7 @@ main {
 }
 
 /* ===================================
-   バックアップ・復元ボタン
+   バックアップ・復元・手動保存ボタン
    =================================== */
 .btn-backup, .btn-restore {
     background: #2196F3;
@@ -1121,6 +1121,30 @@ main {
     background: #1976D2;
     transform: translateY(-2px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btn-manual-save {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: all 0.3s;
+    white-space: nowrap;
+}
+
+.btn-manual-save:hover {
+    background: #059669;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btn-manual-save.saving {
+    background: #fbbf24;
+    pointer-events: none;
 }
 
 /* モバイル用の特拡表示最適化 */
