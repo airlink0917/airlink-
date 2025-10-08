@@ -91,6 +91,15 @@ main {
     text-align: center;
 }
 
+/* ボタン1行配置 */
+.button-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
 .staff-inputs {
     display: flex;
     flex-wrap: wrap;
@@ -155,12 +164,14 @@ main {
     background: #4caf50;
     color: white;
     border: none;
-    padding: 10px 20px;
+    padding: 12px 20px;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: bold;
     transition: all 0.3s;
+    flex: 1;
+    min-width: 120px;
 }
 
 .btn-add:hover {
@@ -178,12 +189,14 @@ main {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
-    padding: 12px 24px;
+    padding: 12px 20px;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: bold;
     transition: all 0.3s;
+    flex: 1;
+    min-width: 120px;
 }
 
 .btn-primary:hover {
@@ -1108,24 +1121,25 @@ main {
     background: #ff6b6b;
     color: white;
     border: none;
-    padding: 14px 18px;
+    padding: 12px;
     border-radius: 50%;
     cursor: pointer;
-    font-size: 24px;
+    font-size: 20px;
     font-weight: bold;
     transition: all 0.3s;
     white-space: nowrap;
     box-shadow: 0 4px 8px rgba(255, 107, 107, 0.4);
-    width: 55px;
-    height: 55px;
+    width: 50px;
+    height: 50px;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
 }
 
 .btn-refresh:hover {
     background: #ff5252;
-    transform: translateY(-3px) rotate(180deg);
+    transform: translateY(-2px) rotate(180deg);
     box-shadow: 0 6px 12px rgba(255, 107, 107, 0.5);
 }
 
