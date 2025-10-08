@@ -4,7 +4,7 @@
 
 // Supabase設定
 const SUPABASE_URL = 'https://vcbkuurfvwtvapqxrklc.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZjYmt1dXJmdnd0dmFwcXhya2xjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU1MjE0MTAsImV4cCI6MjA1MTA5NzQxMH0.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZjYmt1dXJmdnd0dmFwcXhya2xjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU1MjE0MTAsImV4cCI6MjA1MTA5NzQxMH0';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZjYmt1dXJmdnd0d2FwcXhya2xjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4NjY3ODAsImV4cCI6MjA3NTQ0Mjc4MH0.g0rstC6tArVZqqavOzB4dmqqdDZ-MLMmnNP8yzPV3NM';
 const USER_ID = 'global_user';
 
 // グローバル変数
