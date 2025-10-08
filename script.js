@@ -3,8 +3,8 @@
 // ===================================
 
 // Supabase設定
-const SUPABASE_URL = 'https://igjkroqjhwhewtrprhds.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlnamtyb3FqaHdoZXd0cnByaGRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyNTQ5ODEsImV4cCI6MjA3MzgzMDk4MX0.7pD4mWSbr8FvGKIjkNSrQuLdUPISxayZGANZ27TuqzI';
+const SUPABASE_URL = 'https://vcbkuurfvwtvapqxrklc.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZjYmt1dXJmdnd0dmFwcXhya2xjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU1MjE0MTAsImV4cCI6MjA1MTA5NzQxMH0.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZjYmt1dXJmdnd0dmFwcXhya2xjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU1MjE0MTAsImV4cCI6MjA1MTA5NzQxMH0';
 const USER_ID = 'global_user';
 
 // グローバル変数
