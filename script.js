@@ -164,6 +164,14 @@ function setupEventListeners() {
         document.getElementById('campaignModal').style.display = 'block';
     });
 
+    // ページ更新ボタン
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+            location.reload();
+        });
+    }
+
     // 手動保存ボタン
     const manualSaveBtn = document.getElementById('manualSaveBtn');
     if (manualSaveBtn) {

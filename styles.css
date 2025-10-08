@@ -1102,8 +1102,32 @@ main {
 }
 
 /* ===================================
-   バックアップ・復元・手動保存ボタン
+   バックアップ・復元・手動保存・更新ボタン
    =================================== */
+.btn-refresh {
+    background: #ff6b6b;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    transition: all 0.3s;
+    white-space: nowrap;
+    box-shadow: 0 4px 6px rgba(255, 107, 107, 0.3);
+}
+
+.btn-refresh:hover {
+    background: #ff5252;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(255, 107, 107, 0.4);
+}
+
+.btn-refresh:active {
+    transform: translateY(-1px);
+}
+
 .btn-backup, .btn-restore {
     background: #2196F3;
     color: white;
