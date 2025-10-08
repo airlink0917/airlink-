@@ -1799,18 +1799,14 @@ async function manualSaveNow() {
         }
 
         // すべてのスタッフをSupabaseに保存
-        for (let i = 0; i < staffMembers.length; i++) {
-            if (staffMembers[i]) {
-                await saveStaffToSupabase(i, staffMembers[i]);
-            }
-        }
-
-        updateSyncStatus('保存完了');
-        alert('保存完了！他の端末にすぐ反映されます');
+        await saveStaffToSupabase();
 
         // ボタンを元に戻す
         btn.classList.remove('saving');
         btn.textContent = '手動保存';
+
+        updateSyncStatus('保存完了');
+        alert('保存完了！他の端末にすぐ反映されます');
 
         // 3秒後に同期ステータスをリセット
         setTimeout(() => {
@@ -1819,12 +1815,13 @@ async function manualSaveNow() {
 
     } catch (error) {
         console.error('手動保存エラー:', error);
-        alert('保存に失敗しました');
-        updateSyncStatus('同期エラー');
 
         // エラー時もボタンを元に戻す
         btn.classList.remove('saving');
         btn.textContent = '手動保存';
+
+        updateSyncStatus('同期エラー');
+        alert('保存に失敗しました: ' + error.message);
     }
 }
 
