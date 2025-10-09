@@ -52,17 +52,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadStaffMembers();
     loadEvents();
 
-    // UI初期化
+    // UI初期化（すぐにカレンダーを表示）
     initializeUI();
 
-    // Supabaseから最新データを取得
-    try {
-        await syncData();
+    // Supabaseから最新データを取得（バックグラウンドで実行）
+    syncData().then(() => {
         console.log('初回同期完了');
-    } catch (error) {
+    }).catch((error) => {
         console.error('初回同期エラー:', error);
         console.log('ローカルデータで続行します');
-    }
+    });
 
     // 定期同期を設定（10秒ごと）
     setInterval(async () => {
@@ -1491,18 +1490,24 @@ function saveStaffMembers(skipSupabase = false) {
 
 function loadStaffMembers() {
     const saved = localStorage.getItem('staffMembers');
-    if (saved) {
+    const savedVersion = localStorage.getItem('dataVersion');
+
+    // バージョンが異なる、または保存データがない場合はデフォルトを使用
+    if (savedVersion !== DATA_VERSION || !saved) {
+        staffMembers = [...DEFAULT_STAFF];
+        localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
+        localStorage.setItem('dataVersion', DATA_VERSION);
+        console.log('デフォルト担当者を設定:', staffMembers);
+    } else {
         const savedStaff = JSON.parse(saved);
         // 保存されたデータが空または不正な場合はデフォルトを使用
         if (!savedStaff || savedStaff.length === 0 || savedStaff.every(s => !s || s.trim() === '')) {
             staffMembers = [...DEFAULT_STAFF];
             localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
+            console.log('空データのためデフォルト担当者を設定:', staffMembers);
         } else {
             staffMembers = savedStaff;
         }
-    } else {
-        staffMembers = [...DEFAULT_STAFF];
-        localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
     }
 }
 
