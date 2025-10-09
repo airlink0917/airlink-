@@ -85,7 +85,7 @@ function initializeUI() {
     // スタッフ初期化（デフォルト値を設定）
     if (!staffMembers || staffMembers.length === 0) {
         // LocalStorageにデータがない場合はデフォルトのスタッフを設定
-        staffMembers = ['大西', '小林', '上田', '北野', '大浜'];
+        staffMembers = ['大西', '北野', '大浜', '丹波', '永見', '渡辺', '富田', '良太'];
         saveStaffMembers(false);
     }
 
@@ -143,7 +143,6 @@ function setupEventListeners() {
     // 担当者設定ボタン（モーダルを開く）
     const addBtn = document.getElementById('addStaff');
     if (addBtn) {
-        addBtn.textContent = '担当者を設定'; // ボタンテキストを変更
         addBtn.addEventListener('click', (e) => {
             e.preventDefault();
             openStaffModal();
@@ -574,7 +573,7 @@ function renderCalendar() {
     // 担当者が設定されていない場合はデフォルトの担当者を使用
     let displayStaff = selectedStaff;
     if (!displayStaff || displayStaff.length === 0) {
-        displayStaff = ['大西', '小林', '上田', '北野', '大浜'];
+        displayStaff = ['大西', '北野', '大浜', '丹波', '永見', '渡辺', '富田', '良太'];
     }
 
     // CSS変数でスタッフ数を設定（表示する担当者数）
