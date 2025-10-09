@@ -533,53 +533,47 @@ main {
 
 .campaign-info {
     display: flex;
-    flex-direction: row;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
     justify-content: center;
-    gap: 10px;
-    flex-wrap: nowrap;
+    gap: 3px;
+    padding: 4px 8px;
+    width: 100%;
 }
 
 .campaign-type {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: bold;
     color: #4a148c;
-    background: rgba(255, 255, 255, 0.8);
-    padding: 2px 8px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 3px 10px;
     border-radius: 4px;
-    display: inline-block;
     white-space: nowrap;
 }
 
 .campaign-members {
     font-size: 11px;
     color: #333;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 50%;
+    line-height: 1.3;
+    word-wrap: break-word;
+    word-break: break-all;
+    width: 100%;
 }
 
 .campaign-members.long-members {
-    font-size: 9px;
-    white-space: normal;
-    text-overflow: clip;
-    line-height: 1.1;
-    max-height: 22px;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+    font-size: 10px;
+    line-height: 1.2;
 }
 
 .campaign-note {
-    font-size: 9px;
-    color: #666;
+    font-size: 10px;
+    color: #555;
     font-style: italic;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 30%;
+    line-height: 1.3;
+    word-wrap: break-word;
+    word-break: break-all;
+    width: 100%;
+    margin-top: 2px;
 }
 
 /* ===================================
@@ -1254,38 +1248,36 @@ main {
         font-size: 12px;
     }
 
-    /* 特拡の表示を1行に */
+    /* 特拡の表示 */
     .campaign-cell-wide {
-        padding: 3px 5px !important;
+        padding: 4px 6px !important;
     }
 
     .campaign-info {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
         gap: 2px;
+        padding: 2px 4px;
     }
 
     .campaign-type {
-        font-size: 10px !important;
-        font-weight: bold;
+        font-size: 11px !important;
+        padding: 2px 8px !important;
     }
 
     .campaign-members {
         font-size: 9px !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        width: 100%;
-        display: block !important;
+        line-height: 1.2 !important;
+        word-wrap: break-word !important;
+        word-break: break-all !important;
+    }
+
+    .campaign-members.long-members {
+        font-size: 8px !important;
     }
 
     .campaign-note {
         font-size: 8px !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        width: 100%;
-        opacity: 0.8;
+        line-height: 1.2 !important;
+        word-wrap: break-word !important;
+        word-break: break-all !important;
     }
 }
