@@ -184,7 +184,7 @@ function setupEventListeners() {
         document.getElementById('campaignModal').style.display = 'block';
     });
 
-    // ページ更新ボタン
+    // ページ更新ボタン（保存ボタン）
     const refreshBtn = document.getElementById('refreshBtn');
     if (refreshBtn) {
         refreshBtn.addEventListener('click', () => {
