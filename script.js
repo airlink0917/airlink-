@@ -83,9 +83,18 @@ function initializeUI() {
     updateMonthDisplay();
 
     // スタッフ初期化（デフォルト値を設定）
-    if (!staffMembers || staffMembers.length === 0) {
-        // LocalStorageにデータがない場合はデフォルトのスタッフを設定
-        staffMembers = ['大西', '北野', '大浜', '丹波', '永見', '渡辺', '富田', '良太'];
+    const defaultStaff = ['大西', '北野', '大浜', '丹波', '永見', '渡辺', '富田', '良太'];
+
+    // 既存のデータをチェック
+    const needsReset = !staffMembers ||
+                       staffMembers.length === 0 ||
+                       staffMembers.every(s => !s || s.trim() === '') ||
+                       (staffMembers.length < 8 && !staffMembers.includes('丹波'));
+
+    if (needsReset) {
+        // デフォルトのスタッフを設定
+        staffMembers = defaultStaff;
+        localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
         saveStaffMembers(false);
     }
 
@@ -1346,9 +1355,17 @@ function saveStaffMembers(skipSupabase = false) {
 function loadStaffMembers() {
     const saved = localStorage.getItem('staffMembers');
     if (saved) {
-        staffMembers = JSON.parse(saved);
+        const savedStaff = JSON.parse(saved);
+        // 保存されたデータが空または不正な場合はデフォルトを使用
+        if (!savedStaff || savedStaff.length === 0 || savedStaff.every(s => !s || s.trim() === '')) {
+            staffMembers = ['大西', '北野', '大浜', '丹波', '永見', '渡辺', '富田', '良太'];
+            localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
+        } else {
+            staffMembers = savedStaff;
+        }
     } else {
-        staffMembers = new Array(9).fill('');
+        staffMembers = ['大西', '北野', '大浜', '丹波', '永見', '渡辺', '富田', '良太'];
+        localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
     }
 }
 
