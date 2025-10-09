@@ -37,11 +37,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Supabase初期化
     try {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        console.log('Supabaseクライアント初期化成功');
+        if (window.supabase && window.supabase.createClient) {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            console.log('Supabaseクライアント初期化成功');
+        } else {
+            console.warn('Supabaseライブラリが見つかりません。ローカルモードで動作します。');
+        }
     } catch (error) {
         console.error('Supabase初期化エラー:', error);
-        alert('Supabaseの初期化に失敗しました。ページをリロードしてください。');
+        console.warn('ローカルモードで動作します。');
     }
 
     // 初期データ読み込み（まずLocalStorageから）
@@ -52,8 +56,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     initializeUI();
 
     // Supabaseから最新データを取得
-    await syncData();
-    console.log('初回同期完了');
+    try {
+        await syncData();
+        console.log('初回同期完了');
+    } catch (error) {
+        console.error('初回同期エラー:', error);
+        console.log('ローカルデータで続行します');
+    }
 
     // 定期同期を設定（10秒ごと）
     setInterval(async () => {
