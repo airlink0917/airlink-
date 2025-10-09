@@ -522,8 +522,9 @@ main {
     border: 2px solid rgba(0, 0, 0, 0.1);
     border-left: none;
     min-height: 50px;
-    display: block !important;
-    position: relative;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
     /* 通常のcalendar-cellスタイルをオーバーライド */
     min-width: auto !important;
     max-width: none !important;
@@ -531,19 +532,14 @@ main {
 }
 
 .campaign-info {
-    display: inline-flex;
+    display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 3px;
     padding: 4px 8px;
-    width: auto;
-    max-width: 400px;
+    width: 100%;
     text-align: center;
-    position: sticky;
-    left: 80px;
-    background: inherit;
-    z-index: 5;
 }
 
 .campaign-type {
@@ -1262,8 +1258,6 @@ main {
     .campaign-info {
         gap: 2px;
         padding: 2px 4px;
-        left: 60px;
-        max-width: 300px;
     }
 
     .campaign-type {
