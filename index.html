@@ -106,6 +106,26 @@
             </div>
         </div>
 
+        <!-- 担当者編集・削除モーダル -->
+        <div id="staffEditModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h3>担当者編集</h3>
+
+                <div style="margin: 20px 0;">
+                    <label>担当者名：</label>
+                    <input type="text" id="editStaffName" placeholder="名前を入力" style="margin-top: 10px; width: 200px;">
+                    <input type="hidden" id="editStaffIndex">
+                </div>
+
+                <div class="modal-buttons">
+                    <button type="button" class="btn-save" id="saveStaffEdit">保存</button>
+                    <button type="button" class="btn-delete" id="deleteStaff">削除</button>
+                    <button type="button" class="btn-cancel">閉じる</button>
+                </div>
+            </div>
+        </div>
+
         <!-- 特拡入力モーダル -->
         <div id="campaignModal" class="modal" style="display: none;">
             <div class="modal-content">

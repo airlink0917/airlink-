@@ -409,8 +409,119 @@ function setupStaffModalListeners() {
     });
 }
 
-// 旧addStaff関数は不要になったため削除
-// 旧removeStaff関数もモーダル内で管理するため削除
+// ===================================
+// 担当者名ヘッダークリック処理
+// ===================================
+function setupStaffHeaderClickHandlers() {
+    document.querySelectorAll('.staff-header-editable').forEach(header => {
+        const staffIndex = parseInt(header.dataset.staffIndex);
+
+        // モバイル・PC両対応
+        header.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openStaffEditModal(staffIndex);
+        });
+    });
+}
+
+// 担当者編集モーダルを開く
+function openStaffEditModal(staffIndex) {
+    const modal = document.getElementById('staffEditModal');
+    if (!modal) return;
+
+    const staffName = staffMembers[staffIndex] || '';
+
+    // フォームに値を設定
+    document.getElementById('editStaffName').value = staffName;
+    document.getElementById('editStaffIndex').value = staffIndex;
+
+    // モーダルを表示
+    modal.style.display = 'block';
+
+    // イベントリスナー設定
+    setupStaffEditModalListeners();
+}
+
+// 担当者編集モーダルのイベントリスナー
+function setupStaffEditModalListeners() {
+    const modal = document.getElementById('staffEditModal');
+    if (!modal) return;
+
+    // 保存ボタン
+    const saveBtn = document.getElementById('saveStaffEdit');
+    if (saveBtn) {
+        const newSaveBtn = saveBtn.cloneNode(true);
+        saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+        newSaveBtn.addEventListener('click', () => {
+            const staffIndex = parseInt(document.getElementById('editStaffIndex').value);
+            const newName = document.getElementById('editStaffName').value.trim();
+
+            if (newName) {
+                staffMembers[staffIndex] = newName;
+
+                // LocalStorageに保存
+                localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
+
+                // Supabaseに保存
+                if (!isMobileDevice()) {
+                    saveStaffMembers(false);
+                }
+
+                // カレンダーを再描画
+                renderCalendar();
+
+                // モーダルを閉じる
+                modal.style.display = 'none';
+
+                alert(`担当者名を「${newName}」に変更しました`);
+            } else {
+                alert('担当者名を入力してください');
+            }
+        });
+    }
+
+    // 削除ボタン
+    const deleteBtn = document.getElementById('deleteStaff');
+    if (deleteBtn) {
+        const newDeleteBtn = deleteBtn.cloneNode(true);
+        deleteBtn.parentNode.replaceChild(newDeleteBtn, deleteBtn);
+        newDeleteBtn.addEventListener('click', () => {
+            const staffIndex = parseInt(document.getElementById('editStaffIndex').value);
+            const staffName = staffMembers[staffIndex];
+
+            if (confirm(`担当者「${staffName}」を削除しますか？\nこの担当者の列が削除されます。`)) {
+                // 配列から削除
+                staffMembers.splice(staffIndex, 1);
+
+                // LocalStorageに保存
+                localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
+
+                // Supabaseに保存
+                if (!isMobileDevice()) {
+                    saveStaffMembers(false);
+                }
+
+                // カレンダーを再描画
+                renderCalendar();
+
+                // モーダルを閉じる
+                modal.style.display = 'none';
+
+                alert(`担当者「${staffName}」を削除しました`);
+            }
+        });
+    }
+
+    // 閉じるボタン
+    modal.querySelectorAll('.close, .btn-cancel').forEach(btn => {
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+        newBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+    });
+}
 
 // ===================================
 // 祝日データ
@@ -499,9 +610,11 @@ function renderCalendar() {
     html += '<div class="calendar-header">';
     html += '<div class="calendar-cell header-cell date-header">日付</div>';
 
-    // 表示する担当者名を表示
-    displayStaff.forEach(name => {
-        html += `<div class="calendar-cell header-cell">${name}</div>`;
+    // 表示する担当者名を表示（クリック可能）
+    displayStaff.forEach((name, displayIndex) => {
+        const originalIndex = staffMembers.indexOf(name);
+        const staffIndex = originalIndex >= 0 ? originalIndex : displayIndex;
+        html += `<div class="calendar-cell header-cell staff-header-editable" data-staff-index="${staffIndex}" style="cursor: pointer;">${name}</div>`;
     });
     html += '</div>';
 
@@ -624,6 +737,9 @@ function renderCalendar() {
 
     // タッチイベントとクリックイベントを設定
     setupCalendarEventHandlers();
+
+    // 担当者名ヘッダーのクリックイベントを設定
+    setupStaffHeaderClickHandlers();
 }
 
 // タッチ操作とスクロールの状態管理
