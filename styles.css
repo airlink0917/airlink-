@@ -1068,6 +1068,46 @@ main {
         padding: 20px;
         width: 95%;
     }
+
+    /* 特拡の表示 */
+    .campaign-cell-wide {
+        padding: 4px 6px !important;
+        height: auto !important;
+    }
+
+    .campaign-info {
+        gap: 2px;
+        padding: 2px 4px;
+    }
+
+    .campaign-type {
+        font-size: 11px !important;
+        padding: 2px 8px !important;
+    }
+
+    .campaign-members {
+        font-size: 9px !important;
+        line-height: 1.2 !important;
+        word-wrap: break-word !important;
+        word-break: break-all !important;
+    }
+
+    .campaign-members.long-members {
+        font-size: 8px !important;
+    }
+
+    .campaign-note {
+        font-size: 6px !important;
+        line-height: 1.0 !important;
+        word-wrap: break-word !important;
+        word-break: break-all !important;
+    }
+
+    /* モバイルでのバックアップボタン */
+    .btn-backup, .btn-restore {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -1241,46 +1281,4 @@ main {
     max-width: 100% !important;
     display: block !important;
     line-height: 1.2 !important;
-}
-
-@media (max-width: 768px) {
-    /* モバイルでのバックアップボタン */
-    .btn-backup, .btn-restore {
-        padding: 6px 10px;
-        font-size: 12px;
-    }
-
-    /* 特拡の表示 */
-    .campaign-cell-wide {
-        padding: 4px 6px !important;
-        height: auto !important;
-    }
-
-    .campaign-info {
-        gap: 2px;
-        padding: 2px 4px;
-    }
-
-    .campaign-type {
-        font-size: 11px !important;
-        padding: 2px 8px !important;
-    }
-
-    .campaign-members {
-        font-size: 9px !important;
-        line-height: 1.2 !important;
-        word-wrap: break-word !important;
-        word-break: break-all !important;
-    }
-
-    .campaign-members.long-members {
-        font-size: 8px !important;
-    }
-
-    .campaign-note {
-        font-size: 6px !important;
-        line-height: 1.0 !important;
-        word-wrap: break-word !important;
-        word-break: break-all !important;
-    }
 }
