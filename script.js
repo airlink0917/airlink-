@@ -320,14 +320,11 @@ function openStaffModal() {
     const modal = document.getElementById('staffModal');
     if (!modal) return;
 
-    // 一時リストを現在のリストで初期化
-    tempStaffList = [...staffMembers];
-
-    // 事前定義リストを表示
-    renderPredefinedStaffList();
-
-    // 現在の担当者リストを表示
-    renderCurrentStaffList();
+    // 入力欄をクリア
+    const otherNameInput = document.getElementById('otherStaffName');
+    if (otherNameInput) {
+        otherNameInput.value = '';
+    }
 
     // モーダルを表示
     modal.style.display = 'block';
@@ -336,159 +333,48 @@ function openStaffModal() {
     setupStaffModalListeners();
 }
 
-// 事前定義スタッフリストを表示
-function renderPredefinedStaffList() {
-    const container = document.getElementById('predefinedStaffList');
-    if (!container) return;
-
-    let html = '';
-    PREDEFINED_STAFF.forEach(name => {
-        const isChecked = tempStaffList.includes(name);
-        html += `
-            <label class="staff-checkbox-item">
-                <input type="checkbox" value="${name}" ${isChecked ? 'checked' : ''}>
-                <span>${name}</span>
-            </label>
-        `;
-    });
-    container.innerHTML = html;
-
-    // チェックボックスのイベント
-    container.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-        checkbox.addEventListener('change', (e) => {
-            const name = e.target.value;
-            if (e.target.checked) {
-                if (!tempStaffList.includes(name)) {
-                    tempStaffList.push(name);
-                }
-            } else {
-                const index = tempStaffList.indexOf(name);
-                if (index > -1) {
-                    tempStaffList.splice(index, 1);
-                }
-            }
-            renderCurrentStaffList();
-        });
-    });
-}
-
-// 現在の担当者リストを表示
-function renderCurrentStaffList() {
-    const container = document.getElementById('currentStaffList');
-    if (!container) return;
-
-    if (tempStaffList.length === 0) {
-        container.innerHTML = '<p style="color: #999;">担当者が選択されていません</p>';
-        return;
-    }
-
-    let html = '';
-    tempStaffList.forEach((name, index) => {
-        html += `
-            <div class="current-staff-item">
-                <input type="text" value="${name}" data-index="${index}" class="staff-name-input">
-                <div class="staff-item-buttons">
-                    <button type="button" class="btn-edit-staff" data-index="${index}">更新</button>
-                    <button type="button" class="btn-remove-staff" data-index="${index}">削除</button>
-                </div>
-            </div>
-        `;
-    });
-    container.innerHTML = html;
-
-    // 編集・削除ボタンのイベント
-    container.querySelectorAll('.btn-edit-staff').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const index = parseInt(e.target.dataset.index);
-            const input = e.target.parentElement.parentElement.querySelector('.staff-name-input');
-            const newName = input.value.trim();
-            if (newName) {
-                tempStaffList[index] = newName;
-                renderPredefinedStaffList();
-                renderCurrentStaffList();
-            }
-        });
-    });
-
-    container.querySelectorAll('.btn-remove-staff').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const index = parseInt(e.target.dataset.index);
-            tempStaffList.splice(index, 1);
-            renderPredefinedStaffList();
-            renderCurrentStaffList();
-        });
-    });
-}
+// 不要な関数を削除（renderPredefinedStaffList と renderCurrentStaffList）
 
 // モーダルのイベントリスナー
 function setupStaffModalListeners() {
     const modal = document.getElementById('staffModal');
     if (!modal) return;
 
-    // その他チェックボックス
-    const otherCheckbox = document.getElementById('otherStaffCheckbox');
     const otherNameInput = document.getElementById('otherStaffName');
     const addOtherBtn = document.getElementById('addOtherStaff');
 
-    // 既存のリスナーを削除してから追加
-    if (otherCheckbox) {
-        const newCheckbox = otherCheckbox.cloneNode(true);
-        otherCheckbox.parentNode.replaceChild(newCheckbox, otherCheckbox);
-        newCheckbox.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                otherNameInput.style.display = 'inline-block';
-                addOtherBtn.style.display = 'inline-block';
-                otherNameInput.focus();
-            } else {
-                otherNameInput.style.display = 'none';
-                addOtherBtn.style.display = 'none';
-                otherNameInput.value = '';
-            }
-        });
-    }
-
-    // その他追加ボタン
+    // 追加ボタン
     if (addOtherBtn) {
         const newBtn = addOtherBtn.cloneNode(true);
         addOtherBtn.parentNode.replaceChild(newBtn, addOtherBtn);
         newBtn.addEventListener('click', () => {
             const name = otherNameInput.value.trim();
-            if (name && !tempStaffList.includes(name)) {
-                tempStaffList.push(name);
-                renderPredefinedStaffList();
-                renderCurrentStaffList();
-                otherNameInput.value = '';
+            if (name) {
+                // 重複チェック
+                if (!staffMembers.includes(name)) {
+                    staffMembers.push(name);
+
+                    // ローカルストレージに保存
+                    localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
+
+                    // Supabaseに保存
+                    if (!isMobileDevice()) {
+                        saveStaffMembers(false);
+                    }
+
+                    // カレンダーを再描画
+                    renderCalendar();
+
+                    // 入力欄をクリア
+                    otherNameInput.value = '';
+
+                    alert(`担当者「${name}」を追加しました`);
+                } else {
+                    alert('この担当者は既に登録されています');
+                }
+            } else {
+                alert('担当者名を入力してください');
             }
-        });
-    }
-
-    // 保存ボタン
-    const saveBtn = document.getElementById('saveStaffSettings');
-    if (saveBtn) {
-        const newSaveBtn = saveBtn.cloneNode(true);
-        saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
-        newSaveBtn.addEventListener('click', () => {
-            console.log('保存ボタンがクリックされました');
-            console.log('保存する担当者:', tempStaffList);
-
-            // 担当者リストを更新
-            staffMembers = [...tempStaffList];
-
-            // ローカルストレージに保存
-            localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
-
-            // Supabaseに保存
-            if (!isMobileDevice()) {
-                saveStaffMembers(false);
-            }
-
-            // カレンダーを再描画
-            renderCalendar();
-
-            // モーダルを閉じる
-            modal.style.display = 'none';
-
-            console.log('担当者設定が保存されました');
         });
     }
 
