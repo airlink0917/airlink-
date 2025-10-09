@@ -1254,6 +1254,7 @@ main {
     /* 特拡の表示 */
     .campaign-cell-wide {
         padding: 4px 6px !important;
+        height: auto !important;
     }
 
     .campaign-info {
