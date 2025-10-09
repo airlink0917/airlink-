@@ -522,6 +522,7 @@ main {
     border: 2px solid rgba(0, 0, 0, 0.1);
     border-left: none;
     min-height: 50px;
+    height: auto;
     display: flex !important;
     align-items: center;
     justify-content: center;
