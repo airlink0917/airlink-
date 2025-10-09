@@ -17,6 +17,10 @@ let editingEventId = null;
 // 同期設定（ミリ秒単位）
 const SYNC_INTERVAL = 10000; // 10秒ごとの自動同期
 
+// データバージョン管理
+const DATA_VERSION = '2.0'; // デフォルト担当者8名版
+const DEFAULT_STAFF = ['大西', '北野', '大浜', '丹波', '永見', '渡辺', '富田', '良太'];
+
 // ===================================
 // モバイルデバイス検出
 // ===================================
@@ -82,18 +86,26 @@ function initializeUI() {
     // 現在月表示
     updateMonthDisplay();
 
-    // スタッフ初期化（デフォルト値を設定）
-    const defaultStaff = ['大西', '北野', '大浜', '丹波', '永見', '渡辺', '富田', '良太'];
+    // バージョン管理：データ構造の更新チェック
+    const currentVersion = localStorage.getItem('dataVersion');
 
-    // 既存のデータをチェック
-    const needsReset = !staffMembers ||
-                       staffMembers.length === 0 ||
-                       staffMembers.every(s => !s || s.trim() === '') ||
-                       (staffMembers.length < 8 && !staffMembers.includes('丹波'));
+    if (currentVersion !== DATA_VERSION) {
+        console.log(`データバージョンを更新: ${currentVersion} → ${DATA_VERSION}`);
 
-    if (needsReset) {
-        // デフォルトのスタッフを設定
-        staffMembers = defaultStaff;
+        // デフォルト担当者を強制設定
+        staffMembers = [...DEFAULT_STAFF];
+        localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
+        localStorage.setItem('dataVersion', DATA_VERSION);
+
+        // Supabaseに即座に保存
+        saveStaffMembers(false);
+
+        console.log('デフォルト担当者を設定しました:', staffMembers);
+    }
+
+    // 担当者が空の場合もデフォルトを設定
+    if (!staffMembers || staffMembers.length === 0) {
+        staffMembers = [...DEFAULT_STAFF];
         localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
         saveStaffMembers(false);
     }
@@ -468,7 +480,7 @@ function renderCalendar() {
     // 担当者が設定されていない場合はデフォルトの担当者を使用
     let displayStaff = selectedStaff;
     if (!displayStaff || displayStaff.length === 0) {
-        displayStaff = ['大西', '北野', '大浜', '丹波', '永見', '渡辺', '富田', '良太'];
+        displayStaff = [...DEFAULT_STAFF];
     }
 
     // CSS変数でスタッフ数を設定（表示する担当者数）
@@ -1358,13 +1370,13 @@ function loadStaffMembers() {
         const savedStaff = JSON.parse(saved);
         // 保存されたデータが空または不正な場合はデフォルトを使用
         if (!savedStaff || savedStaff.length === 0 || savedStaff.every(s => !s || s.trim() === '')) {
-            staffMembers = ['大西', '北野', '大浜', '丹波', '永見', '渡辺', '富田', '良太'];
+            staffMembers = [...DEFAULT_STAFF];
             localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
         } else {
             staffMembers = savedStaff;
         }
     } else {
-        staffMembers = ['大西', '北野', '大浜', '丹波', '永見', '渡辺', '富田', '良太'];
+        staffMembers = [...DEFAULT_STAFF];
         localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
     }
 }
@@ -1447,38 +1459,52 @@ async function syncData() {
             }
         }
 
-        // スタッフデータを取得
-        const { data: staffData, error: staffError } = await supabase
-            .from('staff_members')
-            .select('*')
-            .eq('user_id', USER_ID)
-            .order('staff_index');
+        // スタッフデータを取得（バージョン管理を考慮）
+        const currentVersion = localStorage.getItem('dataVersion');
 
-        if (staffError) {
-            console.error('スタッフ取得エラー:', staffError);
-            if (syncStatus) {
-                syncStatus.textContent = '';
-            }
-        } else if (staffData && staffData.length > 0) {
-            const maxIndex = Math.max(...staffData.map(s => s.staff_index));
-            const newStaff = new Array(Math.max(maxIndex + 1, 9)).fill('');
+        // バージョンが最新の場合のみSupabaseから同期
+        if (currentVersion === DATA_VERSION) {
+            const { data: staffData, error: staffError } = await supabase
+                .from('staff_members')
+                .select('*')
+                .eq('user_id', USER_ID)
+                .order('staff_index');
 
-            staffData.forEach(s => {
-                if (s.staff_index >= 0 && s.staff_index < newStaff.length) {
-                    newStaff[s.staff_index] = s.name || '';
+            if (staffError) {
+                console.error('スタッフ取得エラー:', staffError);
+                if (syncStatus) {
+                    syncStatus.textContent = '';
                 }
-            });
+            } else if (staffData && staffData.length > 0) {
+                const maxIndex = Math.max(...staffData.map(s => s.staff_index));
+                const newStaff = new Array(Math.max(maxIndex + 1, DEFAULT_STAFF.length)).fill('');
 
-            // スタッフデータを更新（モバイルで入力中は再描画しない）
-            staffMembers = newStaff;
-            localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
+                staffData.forEach(s => {
+                    if (s.staff_index >= 0 && s.staff_index < newStaff.length) {
+                        newStaff[s.staff_index] = s.name || '';
+                    }
+                });
 
-            // 入力中でない場合のみ再描画
-            const activeEl = document.activeElement;
-            if (!activeEl || !activeEl.classList.contains('staff-input')) {
-                renderStaffInputs();
-                renderCalendar();
+                // 取得したデータが有効な場合のみ更新
+                const hasValidData = newStaff.some(name => name && name.trim() !== '');
+
+                if (hasValidData) {
+                    // スタッフデータを更新（モバイルで入力中は再描画しない）
+                    staffMembers = newStaff;
+                    localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
+
+                    // 入力中でない場合のみ再描画
+                    const activeEl = document.activeElement;
+                    if (!activeEl || !activeEl.classList.contains('staff-input')) {
+                        renderStaffInputs();
+                        renderCalendar();
+                    }
+                } else {
+                    console.log('Supabaseのデータが空のため、ローカルデータを保持');
+                }
             }
+        } else {
+            console.log('バージョンが古いため、Supabaseからの同期をスキップ');
         }
 
         if (syncStatus) {
