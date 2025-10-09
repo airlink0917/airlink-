@@ -522,9 +522,8 @@ main {
     border: 2px solid rgba(0, 0, 0, 0.1);
     border-left: none;
     min-height: 50px;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
+    display: block !important;
+    position: relative;
     /* 通常のcalendar-cellスタイルをオーバーライド */
     min-width: auto !important;
     max-width: none !important;
@@ -532,7 +531,7 @@ main {
 }
 
 .campaign-info {
-    display: flex;
+    display: inline-flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
