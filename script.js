@@ -673,8 +673,13 @@ function renderCalendar() {
             // モバイルの場合は1行表示、PCの場合は複数行表示可
             const memberText = isCampaign.campaignMembers?.join('、') || '';
             const isMobile = isMobileDevice();
-            const memberClass = isMobile ? 'campaign-members campaign-members-mobile' :
-                               (memberText.length > 20 ? 'campaign-members long-members' : 'campaign-members');
+
+            // モバイル用のインラインスタイル（確実に適用されるように）
+            const campaignTypeStyle = isMobile ? 'style="font-size: 9px !important; padding: 2px 6px !important;"' : '';
+            const memberStyle = isMobile ? 'style="font-size: 5px !important; line-height: 1.0 !important; word-wrap: break-word !important; word-break: break-all !important;"' : '';
+            const noteStyle = isMobile ? 'style="font-size: 5px !important; line-height: 1.0 !important; word-wrap: break-word !important; word-break: break-all !important;"' : '';
+
+            const memberClass = (memberText.length > 20 && !isMobile) ? 'campaign-members long-members' : 'campaign-members';
 
             // 特拡の日は全幅で表示（クリックで編集可能）
             html += `
@@ -682,9 +687,9 @@ function renderCalendar() {
                      style="background-color: ${isCampaign.color || '#E1BEE7'}; cursor: pointer;"
                      data-campaign-id="${isCampaign.id}">
                     <div class="campaign-info">
-                        <div class="campaign-type">${campaignTypeName}</div>
-                        <div class="${memberClass}">${memberText}</div>
-                        ${isCampaign.note ? `<div class="campaign-note">${isCampaign.note}</div>` : ''}
+                        <div class="campaign-type" ${campaignTypeStyle}>${campaignTypeName}</div>
+                        <div class="${memberClass}" ${memberStyle}>${memberText}</div>
+                        ${isCampaign.note ? `<div class="campaign-note" ${noteStyle}>${isCampaign.note}</div>` : ''}
                     </div>
                 </div>
             `;

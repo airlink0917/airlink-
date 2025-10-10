@@ -1271,14 +1271,3 @@ main {
     background: #fbbf24;
     pointer-events: none;
 }
-
-/* モバイル用の特拡表示最適化 */
-.campaign-members-mobile {
-    font-size: 9px !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    max-width: 100% !important;
-    display: block !important;
-    line-height: 1.2 !important;
-}
