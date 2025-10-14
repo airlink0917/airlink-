@@ -45,3 +45,7 @@ build/
 # Backup files
 *.backup
 *.bak
+
+# Account information (sensitive)
+アカウント情報.txt
+supabaseアカウント情報.txt
