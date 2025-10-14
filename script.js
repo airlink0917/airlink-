@@ -240,6 +240,14 @@ function setupEventListeners() {
         });
     }
 
+    // 印刷ボタン
+    const printBtn = document.getElementById('printBtn');
+    if (printBtn) {
+        printBtn.addEventListener('click', () => {
+            printCalendar();
+        });
+    }
+
     // モーダル関連
     setupModalListeners();
 }
@@ -1967,4 +1975,18 @@ function restoreData(file) {
 
     reader.readAsText(file);
 }
+
+// ===================================
+// 印刷機能
+// ===================================
+function printCalendar() {
+    try {
+        // 印刷プレビューを開く
+        window.print();
+    } catch (error) {
+        console.error('印刷エラー:', error);
+        alert('印刷に失敗しました');
+    }
+}
+
 console.log('アプリケーション準備完了');

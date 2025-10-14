@@ -1158,41 +1158,273 @@ main {
    印刷用スタイル
    =================================== */
 @media print {
-    body {
-        background: white;
+    /* ページ設定: A4横向き */
+    @page {
+        size: A4 landscape;
+        margin: 5mm;
     }
 
+    body {
+        background: white;
+        margin: 0;
+        padding: 0;
+    }
+
+    #app {
+        max-width: 100%;
+        padding: 0;
+    }
+
+    /* ヘッダーを簡略化 */
     header {
         background: none;
         color: black;
-        border: 1px solid #333;
+        border-bottom: 1px solid #333;
+        padding: 2mm 0;
+        margin-bottom: 2mm;
     }
 
-    .header-controls button {
-        display: none;
+    header h1 {
+        font-size: 12pt;
+        color: #333;
+        margin-bottom: 0;
     }
 
+    /* ボタンとステータスを非表示 */
+    .header-controls button,
     #syncStatus {
         display: none;
     }
 
+    .header-controls {
+        display: flex;
+        justify-content: center;
+        gap: 5px;
+    }
+
+    #currentMonth {
+        color: #333;
+        font-size: 11pt;
+    }
+
+    /* メインコンテンツ */
+    main {
+        padding: 0;
+        box-shadow: none;
+    }
+
+    /* ボタンを非表示 */
     .btn-add,
     .btn-primary,
-    .btn-delete-staff {
+    .btn-delete-staff,
+    .btn-refresh,
+    .staff-section {
         display: none;
     }
 
+    /* モーダルを非表示 */
     .modal {
         display: none !important;
     }
 
+    /* カレンダーコンテナ */
+    .calendar-container {
+        max-height: none;
+        min-height: auto;
+        border: 1px solid #333;
+        overflow: visible;
+    }
+
+    .calendar-scroll-wrapper {
+        max-height: none;
+        min-height: auto;
+        overflow: visible;
+    }
+
+    /* カレンダーグリッド - A4横向きに最適化 */
+    .calendar-grid {
+        width: 100%;
+        min-width: 100%;
+        font-size: 5pt;
+        display: block;
+    }
+
+    /* ヘッダー行 */
+    .calendar-header {
+        position: static;
+        box-shadow: none;
+        border-bottom: 1px solid #333;
+        display: flex;
+        width: 100%;
+    }
+
+    .calendar-row {
+        display: flex;
+        page-break-inside: avoid;
+        width: 100%;
+    }
+
+    .header-cell {
+        background: #e0e0e0 !important;
+        color: #000 !important;
+        font-size: 5pt;
+        padding: 1mm 0.5mm;
+        border: 0.5pt solid #333;
+        font-weight: bold;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .header-cell.date-header {
+        background: #d0d0d0 !important;
+        flex: 0 0 35mm;
+        min-width: 35mm;
+        max-width: 35mm;
+    }
+
+    /* 日付セル */
+    .date-cell {
+        position: static;
+        font-size: 5pt;
+        padding: 1mm 0.5mm;
+        border: 0.5pt solid #666;
+        background: #f5f5f5 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 35mm;
+        min-width: 35mm;
+        max-width: 35mm;
+        line-height: 1.1;
+    }
+
+    .date-cell.saturday {
+        background: #E3F2FD !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .date-cell.sunday {
+        background: #FCE4EC !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .date-cell.holiday {
+        background: #FFEBEE !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .holiday-name {
+        font-size: 4pt;
+        line-height: 1.1;
+    }
+
+    /* イベントセル */
     .calendar-cell {
-        font-size: 8pt;
-        padding: 4px;
+        font-size: 5pt;
+        padding: 0.5mm;
+        border: 0.5pt solid #666;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        line-height: 1.1;
+        flex: 1;
+        overflow: hidden;
+    }
+
+    .event-cell {
+        min-height: auto;
+        max-height: none;
+        height: auto;
+        cursor: default;
     }
 
     .empty-cell:hover {
         background: none;
+    }
+
+    .has-event {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* イベント内容 */
+    .event-title {
+        font-size: 5pt !important;
+        position: static !important;
+        transform: none !important;
+        max-height: none !important;
+        line-height: 1.1 !important;
+        -webkit-line-clamp: unset !important;
+        display: block !important;
+        word-break: break-all !important;
+        width: 100% !important;
+        left: auto !important;
+        right: auto !important;
+        top: auto !important;
+    }
+
+    .event-time {
+        font-size: 4pt !important;
+        position: static !important;
+        display: block !important;
+        line-height: 1.1 !important;
+        width: 100% !important;
+        left: auto !important;
+        right: auto !important;
+        bottom: auto !important;
+    }
+
+    .event-note {
+        font-size: 4pt !important;
+        position: static !important;
+        display: block !important;
+        line-height: 1.1 !important;
+        width: 100% !important;
+        left: auto !important;
+        right: auto !important;
+        bottom: auto !important;
+    }
+
+    /* 特拡セル */
+    .campaign-cell-wide {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        padding: 1mm;
+        display: flex;
+        flex: 1;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .campaign-type {
+        font-size: 6pt;
+        background: rgba(255, 255, 255, 0.9) !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .campaign-members {
+        font-size: 5pt;
+        line-height: 1.1;
+    }
+
+    .campaign-note {
+        font-size: 4pt;
+        line-height: 1.1;
     }
 }
 
@@ -1229,7 +1461,7 @@ main {
     transform: translateY(-1px) rotate(180deg);
 }
 
-.btn-backup, .btn-restore {
+.btn-backup, .btn-restore, .btn-print {
     background: #2196F3;
     color: white;
     border: none;
@@ -1242,10 +1474,18 @@ main {
     white-space: nowrap;
 }
 
-.btn-backup:hover, .btn-restore:hover {
+.btn-backup:hover, .btn-restore:hover, .btn-print:hover {
     background: #1976D2;
     transform: translateY(-2px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btn-print {
+    background: #9C27B0;
+}
+
+.btn-print:hover {
+    background: #7B1FA2;
 }
 
 .btn-manual-save {
