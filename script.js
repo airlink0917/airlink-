@@ -13,7 +13,7 @@ let currentDate = new Date();
 let events = [];
 let staffMembers = [];
 let editingEventId = null;
-let globalMemo = '';
+let monthlyMemos = {}; // 月ごとのメモを保存
 
 // 同期設定（ミリ秒単位）
 const SYNC_INTERVAL = 10000; // 10秒ごとの自動同期
@@ -282,8 +282,9 @@ function setupEventListeners() {
     if (memoTextarea) {
         let memoTimer = null;
         memoTextarea.addEventListener('input', (e) => {
-            globalMemo = e.target.value;
-            localStorage.setItem('globalMemo', globalMemo);
+            const monthKey = getCurrentMonthKey();
+            monthlyMemos[monthKey] = e.target.value;
+            localStorage.setItem('monthlyMemos', JSON.stringify(monthlyMemos));
 
             clearTimeout(memoTimer);
             memoTimer = setTimeout(() => {
@@ -969,6 +970,28 @@ function updateMonthDisplay() {
     if (currentMonthBottom) {
         currentMonthBottom.textContent = monthText;
     }
+
+    // その月のお知らせを表示
+    updateMemoForCurrentMonth();
+}
+
+// 現在の月のメモを表示
+function updateMemoForCurrentMonth() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth() + 1;
+    const monthKey = `${year}-${String(month).padStart(2, '0')}`;
+
+    const memoTextarea = document.getElementById('globalMemo');
+    if (memoTextarea) {
+        memoTextarea.value = monthlyMemos[monthKey] || '';
+    }
+}
+
+// 現在の月のメモキーを取得
+function getCurrentMonthKey() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth() + 1;
+    return `${year}-${String(month).padStart(2, '0')}`;
 }
 
 // ===================================
@@ -1732,27 +1755,33 @@ async function syncData() {
             console.log('⚠️ Supabaseにスタッフデータがありません');
         }
 
-        // メモデータを同期
-        const { data: memoData, error: memoError } = await supabase
-            .from('global_memo')
+        // 月別メモデータを同期
+        const { data: memosData, error: memosError } = await supabase
+            .from('monthly_memos')
             .select('*')
-            .eq('user_id', USER_ID)
-            .single();
+            .eq('user_id', USER_ID);
 
-        if (memoError && memoError.code !== 'PGRST116') {
-            console.error('メモ取得エラー:', memoError);
-        } else if (memoData && memoData.memo_content) {
-            const oldMemo = globalMemo;
-            globalMemo = memoData.memo_content;
-            localStorage.setItem('globalMemo', globalMemo);
+        if (memosError && memosError.code !== 'PGRST116') {
+            console.error('メモ取得エラー:', memosError);
+        } else if (memosData && memosData.length > 0) {
+            const oldMemosJson = JSON.stringify(monthlyMemos);
 
+            // Supabaseから取得したメモをマージ
+            memosData.forEach(memo => {
+                monthlyMemos[memo.month_key] = memo.memo_content;
+            });
+
+            const newMemosJson = JSON.stringify(monthlyMemos);
+            localStorage.setItem('monthlyMemos', newMemosJson);
+
+            // 現在の月のメモを更新（入力中でない場合のみ）
             const memoTextarea = document.getElementById('globalMemo');
             if (memoTextarea && memoTextarea !== document.activeElement) {
-                memoTextarea.value = globalMemo;
+                updateMemoForCurrentMonth();
             }
 
-            if (oldMemo !== globalMemo) {
-                console.log('メモを同期しました');
+            if (oldMemosJson !== newMemosJson) {
+                console.log('月別メモを同期しました:', memosData.length, '件');
             }
         }
 
@@ -2039,11 +2068,11 @@ async function manualSaveNow() {
 function backupData() {
     try {
         const backupData = {
-            version: '1.1',
+            version: '1.2',
             date: new Date().toISOString(),
             events: events,
             staffMembers: staffMembers,
-            globalMemo: globalMemo
+            monthlyMemos: monthlyMemos
         };
 
         const jsonStr = JSON.stringify(backupData, null, 2);
@@ -2087,23 +2116,24 @@ function restoreData(file) {
                 // データを復元
                 events = backupData.events || [];
                 staffMembers = backupData.staffMembers || [];
-                globalMemo = backupData.globalMemo || '';
+                monthlyMemos = backupData.monthlyMemos || backupData.globalMemo ? { [getCurrentMonthKey()]: backupData.globalMemo } : {};
 
                 // LocalStorageに保存
                 saveEvents();
                 saveStaffMembers(false);
-                localStorage.setItem('globalMemo', globalMemo);
+                localStorage.setItem('monthlyMemos', JSON.stringify(monthlyMemos));
 
                 // メモテキストエリアを更新
-                const memoTextarea = document.getElementById('globalMemo');
-                if (memoTextarea) {
-                    memoTextarea.value = globalMemo;
-                }
+                updateMemoForCurrentMonth();
 
                 // Supabaseに同期
                 syncData();
-                if (globalMemo) {
-                    saveMemo();
+
+                // 全ての月のメモを保存
+                for (const monthKey in monthlyMemos) {
+                    if (monthlyMemos[monthKey]) {
+                        saveMemo();
+                    }
                 }
 
                 // カレンダーを再描画
@@ -2134,18 +2164,16 @@ function printCalendar() {
 }
 
 // ===================================
-// メモ機能
+// メモ機能（月ごと）
 // ===================================
 function loadMemo() {
-    const saved = localStorage.getItem('globalMemo');
+    const saved = localStorage.getItem('monthlyMemos');
     if (saved) {
-        globalMemo = saved;
-        const memoTextarea = document.getElementById('globalMemo');
-        if (memoTextarea) {
-            memoTextarea.value = globalMemo;
-        }
-        console.log('メモを読み込みました');
+        monthlyMemos = JSON.parse(saved);
+        console.log('月別メモを読み込みました:', Object.keys(monthlyMemos).length, '件');
     }
+    // 現在の月のメモを表示
+    updateMemoForCurrentMonth();
 }
 
 async function saveMemo() {
@@ -2154,8 +2182,9 @@ async function saveMemo() {
 
     if (!memoTextarea) return;
 
-    globalMemo = memoTextarea.value;
-    localStorage.setItem('globalMemo', globalMemo);
+    const monthKey = getCurrentMonthKey();
+    monthlyMemos[monthKey] = memoTextarea.value;
+    localStorage.setItem('monthlyMemos', JSON.stringify(monthlyMemos));
 
     if (memoStatus) {
         memoStatus.textContent = '保存中...';
@@ -2166,13 +2195,14 @@ async function saveMemo() {
     if (supabase) {
         try {
             const { data, error } = await supabase
-                .from('global_memo')
+                .from('monthly_memos')
                 .upsert({
                     user_id: USER_ID,
-                    memo_content: globalMemo,
+                    month_key: monthKey,
+                    memo_content: monthlyMemos[monthKey],
                     updated_at: new Date().toISOString()
                 }, {
-                    onConflict: 'user_id'
+                    onConflict: 'user_id,month_key'
                 })
                 .select();
 
@@ -2183,7 +2213,7 @@ async function saveMemo() {
                     memoStatus.style.color = '#f44336';
                 }
             } else {
-                console.log('メモ保存成功');
+                console.log('メモ保存成功:', monthKey);
                 if (memoStatus) {
                     memoStatus.textContent = '✓ 保存しました';
                     memoStatus.style.color = '#4caf50';
