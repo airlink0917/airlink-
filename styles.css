@@ -91,6 +91,71 @@ main {
     text-align: center;
 }
 
+/* メモセクション */
+.memo-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.memo-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.memo-header label {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+}
+
+.global-memo {
+    width: 100%;
+    min-height: 80px;
+    max-height: 200px;
+    padding: 10px;
+    border: 2px solid #e0e0e0;
+    border-radius: 5px;
+    font-size: 14px;
+    font-family: 'Hiragino Sans', 'Meiryo', sans-serif;
+    resize: vertical;
+    transition: border-color 0.3s;
+}
+
+.global-memo:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.btn-save-memo {
+    background: #4caf50;
+    color: white;
+    border: none;
+    padding: 6px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+    transition: all 0.3s;
+}
+
+.btn-save-memo:hover {
+    background: #45a049;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.memo-status {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #666;
+    min-height: 16px;
+}
+
 /* ボタン1行配置 */
 .button-row {
     display: flex;
@@ -1213,12 +1278,13 @@ main {
         box-shadow: none;
     }
 
-    /* ボタンを非表示 */
+    /* ボタンとメモ欄を非表示 */
     .btn-add,
     .btn-primary,
     .btn-delete-staff,
     .btn-refresh,
-    .staff-section {
+    .staff-section,
+    .memo-section {
         display: none;
     }
 

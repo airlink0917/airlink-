@@ -13,6 +13,7 @@ let currentDate = new Date();
 let events = [];
 let staffMembers = [];
 let editingEventId = null;
+let globalMemo = '';
 
 // 同期設定（ミリ秒単位）
 const SYNC_INTERVAL = 10000; // 10秒ごとの自動同期
@@ -51,6 +52,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 初期データ読み込み（まずLocalStorageから）
     loadStaffMembers();
     loadEvents();
+    loadMemo();
 
     // UI初期化（すぐにカレンダーを表示）
     initializeUI();
@@ -245,6 +247,29 @@ function setupEventListeners() {
     if (printBtn) {
         printBtn.addEventListener('click', () => {
             printCalendar();
+        });
+    }
+
+    // メモ保存ボタン
+    const saveMemoBtn = document.getElementById('saveMemoBtn');
+    if (saveMemoBtn) {
+        saveMemoBtn.addEventListener('click', async () => {
+            await saveMemo();
+        });
+    }
+
+    // メモ自動保存（入力から3秒後）
+    const memoTextarea = document.getElementById('globalMemo');
+    if (memoTextarea) {
+        let memoTimer = null;
+        memoTextarea.addEventListener('input', (e) => {
+            globalMemo = e.target.value;
+            localStorage.setItem('globalMemo', globalMemo);
+
+            clearTimeout(memoTimer);
+            memoTimer = setTimeout(() => {
+                saveMemo();
+            }, 3000);
         });
     }
 
@@ -1676,6 +1701,30 @@ async function syncData() {
             console.log('⚠️ Supabaseにスタッフデータがありません');
         }
 
+        // メモデータを同期
+        const { data: memoData, error: memoError } = await supabase
+            .from('global_memo')
+            .select('*')
+            .eq('user_id', USER_ID)
+            .single();
+
+        if (memoError && memoError.code !== 'PGRST116') {
+            console.error('メモ取得エラー:', memoError);
+        } else if (memoData && memoData.memo_content) {
+            const oldMemo = globalMemo;
+            globalMemo = memoData.memo_content;
+            localStorage.setItem('globalMemo', globalMemo);
+
+            const memoTextarea = document.getElementById('globalMemo');
+            if (memoTextarea && memoTextarea !== document.activeElement) {
+                memoTextarea.value = globalMemo;
+            }
+
+            if (oldMemo !== globalMemo) {
+                console.log('メモを同期しました');
+            }
+        }
+
         if (syncStatus) {
             syncStatus.textContent = '同期完了';
             setTimeout(() => {
@@ -1959,10 +2008,11 @@ async function manualSaveNow() {
 function backupData() {
     try {
         const backupData = {
-            version: '1.0',
+            version: '1.1',
             date: new Date().toISOString(),
             events: events,
-            staffMembers: staffMembers
+            staffMembers: staffMembers,
+            globalMemo: globalMemo
         };
 
         const jsonStr = JSON.stringify(backupData, null, 2);
@@ -2006,13 +2056,24 @@ function restoreData(file) {
                 // データを復元
                 events = backupData.events || [];
                 staffMembers = backupData.staffMembers || [];
+                globalMemo = backupData.globalMemo || '';
 
                 // LocalStorageに保存
                 saveEvents();
                 saveStaffMembers(false);
+                localStorage.setItem('globalMemo', globalMemo);
+
+                // メモテキストエリアを更新
+                const memoTextarea = document.getElementById('globalMemo');
+                if (memoTextarea) {
+                    memoTextarea.value = globalMemo;
+                }
 
                 // Supabaseに同期
                 syncData();
+                if (globalMemo) {
+                    saveMemo();
+                }
 
                 // カレンダーを再描画
                 renderCalendar();
@@ -2038,6 +2099,83 @@ function printCalendar() {
     } catch (error) {
         console.error('印刷エラー:', error);
         alert('印刷に失敗しました');
+    }
+}
+
+// ===================================
+// メモ機能
+// ===================================
+function loadMemo() {
+    const saved = localStorage.getItem('globalMemo');
+    if (saved) {
+        globalMemo = saved;
+        const memoTextarea = document.getElementById('globalMemo');
+        if (memoTextarea) {
+            memoTextarea.value = globalMemo;
+        }
+        console.log('メモを読み込みました');
+    }
+}
+
+async function saveMemo() {
+    const memoTextarea = document.getElementById('globalMemo');
+    const memoStatus = document.getElementById('memoStatus');
+
+    if (!memoTextarea) return;
+
+    globalMemo = memoTextarea.value;
+    localStorage.setItem('globalMemo', globalMemo);
+
+    if (memoStatus) {
+        memoStatus.textContent = '保存中...';
+        memoStatus.style.color = '#666';
+    }
+
+    // Supabaseに保存
+    if (supabase) {
+        try {
+            const { data, error } = await supabase
+                .from('global_memo')
+                .upsert({
+                    user_id: USER_ID,
+                    memo_content: globalMemo,
+                    updated_at: new Date().toISOString()
+                }, {
+                    onConflict: 'user_id'
+                })
+                .select();
+
+            if (error) {
+                console.error('メモ保存エラー:', error);
+                if (memoStatus) {
+                    memoStatus.textContent = '保存エラー';
+                    memoStatus.style.color = '#f44336';
+                }
+            } else {
+                console.log('メモ保存成功');
+                if (memoStatus) {
+                    memoStatus.textContent = '✓ 保存しました';
+                    memoStatus.style.color = '#4caf50';
+                    setTimeout(() => {
+                        memoStatus.textContent = '';
+                    }, 2000);
+                }
+            }
+        } catch (error) {
+            console.error('メモ保存処理エラー:', error);
+            if (memoStatus) {
+                memoStatus.textContent = '保存エラー';
+                memoStatus.style.color = '#f44336';
+            }
+        }
+    } else {
+        if (memoStatus) {
+            memoStatus.textContent = '✓ ローカルに保存';
+            memoStatus.style.color = '#2196F3';
+            setTimeout(() => {
+                memoStatus.textContent = '';
+            }, 2000);
+        }
     }
 }
 
