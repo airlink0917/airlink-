@@ -290,8 +290,8 @@ main {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: #FFB6C1;
+    color: #333;
     border: none;
     padding: 12px 20px;
     border-radius: 5px;
@@ -304,8 +304,9 @@ main {
 }
 
 .btn-primary:hover {
+    background: #FF69B4;
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 8px rgba(255, 105, 180, 0.4);
 }
 
 /* ===================================
