@@ -1627,6 +1627,7 @@ async function syncData() {
         }
 
         // スタッフデータを取得（常に同期する）
+        console.log('📥 スタッフデータ取得中...');
         const { data: staffData, error: staffError } = await supabase
             .from('staff_members')
             .select('*')
@@ -1634,11 +1635,13 @@ async function syncData() {
             .order('staff_index');
 
         if (staffError) {
-            console.error('スタッフ取得エラー:', staffError);
+            console.error('❌ スタッフ取得エラー:', staffError);
             if (syncStatus) {
                 syncStatus.textContent = '';
             }
         } else if (staffData && staffData.length > 0) {
+            console.log(`✅ Supabaseから${staffData.length}件のスタッフデータ取得`);
+            console.log('📊 取得したスタッフデータ:', staffData);
             const maxIndex = Math.max(...staffData.map(s => s.staff_index));
             const newStaff = new Array(Math.max(maxIndex + 1, DEFAULT_STAFF.length)).fill('');
 
@@ -1658,20 +1661,28 @@ async function syncData() {
 
                 // データに変更がある場合のみ更新
                 if (oldStaffJson !== newStaffJson) {
+                    console.log('🔄 スタッフデータに変更あり - 更新します');
+                    console.log('旧:', staffMembers);
+                    console.log('新:', newStaff);
                     staffMembers = newStaff;
                     localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
-                    console.log('スタッフデータを更新しました:', staffMembers);
+                    console.log('✅ ローカルストレージ更新完了');
 
                     // 入力中でない場合のみ再描画
                     const activeEl = document.activeElement;
                     if (!activeEl || !activeEl.classList.contains('staff-input')) {
                         renderStaffInputs();
                         renderCalendar();
+                        console.log('✅ カレンダー再描画完了');
                     }
+                } else {
+                    console.log('📌 スタッフデータに変更なし');
                 }
             } else {
-                console.log('Supabaseのデータが空のため、ローカルデータを保持');
+                console.log('⚠️ Supabaseのデータが空のため、ローカルデータを保持');
             }
+        } else {
+            console.log('⚠️ Supabaseにスタッフデータがありません');
         }
 
         if (syncStatus) {
@@ -1805,17 +1816,25 @@ async function updateEventInSupabase(event) {
 // 削除関連の関数は削除ボタンのイベントリスナー内に統合
 
 async function saveStaffToSupabase() {
-    if (!supabase) return;
+    if (!supabase) {
+        console.error('❌ saveStaffToSupabase: Supabaseが初期化されていません');
+        return;
+    }
+
+    console.log('🔄 saveStaffToSupabase開始');
+    console.log('📝 保存する担当者データ:', staffMembers);
 
     try {
         // 既存データを削除
+        console.log('🗑️ 既存データ削除中...');
         const { error: deleteError } = await supabase
             .from('staff_members')
             .delete()
             .eq('user_id', USER_ID);
 
         if (deleteError) {
-            console.error('スタッフ削除エラー:', deleteError);
+            console.error('❌ スタッフ削除エラー:', deleteError);
+            console.error('削除エラー詳細:', JSON.stringify(deleteError, null, 2));
             const syncStatus = document.getElementById('syncStatus');
             if (syncStatus) {
                 syncStatus.textContent = '同期エラー';
@@ -1823,8 +1842,9 @@ async function saveStaffToSupabase() {
                     syncStatus.textContent = '';
                 }, 3000);
             }
-            return;
+            throw deleteError;
         }
+        console.log('✅ 既存データ削除完了');
 
         // 新規データを挿入
         const staffData = staffMembers.map((name, index) => ({
@@ -1833,12 +1853,16 @@ async function saveStaffToSupabase() {
             name: name || ''
         }));
 
+        console.log('💾 挿入するデータ:', staffData);
+
         const { data, error: insertError } = await supabase
             .from('staff_members')
-            .insert(staffData);
+            .insert(staffData)
+            .select();
 
         if (insertError) {
-            console.error('スタッフ挿入エラー:', insertError);
+            console.error('❌ スタッフ挿入エラー:', insertError);
+            console.error('挿入エラー詳細:', JSON.stringify(insertError, null, 2));
             const syncStatus = document.getElementById('syncStatus');
             if (syncStatus) {
                 syncStatus.textContent = '同期エラー';
@@ -1846,9 +1870,10 @@ async function saveStaffToSupabase() {
                     syncStatus.textContent = '';
                 }, 3000);
             }
+            throw insertError;
         } else {
-            console.log('スタッフ保存成功:', data);
-            // syncDataの呼び出しを削除（無限ループ防止）
+            console.log('✅ スタッフ保存成功！');
+            console.log('📊 保存されたデータ:', data);
             const syncStatus = document.getElementById('syncStatus');
             if (syncStatus) {
                 syncStatus.textContent = '保存完了';
@@ -1859,7 +1884,8 @@ async function saveStaffToSupabase() {
         }
 
     } catch (error) {
-        console.error('スタッフ保存エラー:', error);
+        console.error('❌ スタッフ保存エラー（キャッチ）:', error);
+        console.error('エラー詳細:', JSON.stringify(error, null, 2));
         const syncStatus = document.getElementById('syncStatus');
         if (syncStatus) {
             syncStatus.textContent = '同期エラー';
@@ -1867,6 +1893,7 @@ async function saveStaffToSupabase() {
                 syncStatus.textContent = '';
             }, 3000);
         }
+        throw error;
     }
 }
 
