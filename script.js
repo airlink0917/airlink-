@@ -394,10 +394,8 @@ function setupStaffModalListeners() {
                     // ローカルストレージに保存
                     localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
 
-                    // Supabaseに保存
-                    if (!isMobileDevice()) {
-                        saveStaffMembers(false);
-                    }
+                    // Supabaseに必ず保存（全デバイス対応）
+                    saveStaffToSupabase();
 
                     // カレンダーを再描画
                     renderCalendar();
@@ -479,10 +477,8 @@ function setupStaffEditModalListeners() {
                 // LocalStorageに保存
                 localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
 
-                // Supabaseに保存
-                if (!isMobileDevice()) {
-                    saveStaffMembers(false);
-                }
+                // Supabaseに必ず保存（全デバイス対応）
+                saveStaffToSupabase();
 
                 // カレンダーを再描画
                 renderCalendar();
@@ -513,10 +509,8 @@ function setupStaffEditModalListeners() {
                 // LocalStorageに保存
                 localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
 
-                // Supabaseに保存
-                if (!isMobileDevice()) {
-                    saveStaffMembers(false);
-                }
+                // Supabaseに必ず保存（全デバイス対応）
+                saveStaffToSupabase();
 
                 // カレンダーを再描画
                 renderCalendar();
@@ -1602,39 +1596,41 @@ async function syncData() {
             }
         }
 
-        // スタッフデータを取得（バージョン管理を考慮）
-        const currentVersion = localStorage.getItem('dataVersion');
+        // スタッフデータを取得（常に同期する）
+        const { data: staffData, error: staffError } = await supabase
+            .from('staff_members')
+            .select('*')
+            .eq('user_id', USER_ID)
+            .order('staff_index');
 
-        // バージョンが最新の場合のみSupabaseから同期
-        if (currentVersion === DATA_VERSION) {
-            const { data: staffData, error: staffError } = await supabase
-                .from('staff_members')
-                .select('*')
-                .eq('user_id', USER_ID)
-                .order('staff_index');
+        if (staffError) {
+            console.error('スタッフ取得エラー:', staffError);
+            if (syncStatus) {
+                syncStatus.textContent = '';
+            }
+        } else if (staffData && staffData.length > 0) {
+            const maxIndex = Math.max(...staffData.map(s => s.staff_index));
+            const newStaff = new Array(Math.max(maxIndex + 1, DEFAULT_STAFF.length)).fill('');
 
-            if (staffError) {
-                console.error('スタッフ取得エラー:', staffError);
-                if (syncStatus) {
-                    syncStatus.textContent = '';
+            staffData.forEach(s => {
+                if (s.staff_index >= 0 && s.staff_index < newStaff.length) {
+                    newStaff[s.staff_index] = s.name || '';
                 }
-            } else if (staffData && staffData.length > 0) {
-                const maxIndex = Math.max(...staffData.map(s => s.staff_index));
-                const newStaff = new Array(Math.max(maxIndex + 1, DEFAULT_STAFF.length)).fill('');
+            });
 
-                staffData.forEach(s => {
-                    if (s.staff_index >= 0 && s.staff_index < newStaff.length) {
-                        newStaff[s.staff_index] = s.name || '';
-                    }
-                });
+            // 取得したデータが有効な場合のみ更新
+            const hasValidData = newStaff.some(name => name && name.trim() !== '');
 
-                // 取得したデータが有効な場合のみ更新
-                const hasValidData = newStaff.some(name => name && name.trim() !== '');
+            if (hasValidData) {
+                // スタッフデータを更新（モバイルで入力中は再描画しない）
+                const oldStaffJson = JSON.stringify(staffMembers);
+                const newStaffJson = JSON.stringify(newStaff);
 
-                if (hasValidData) {
-                    // スタッフデータを更新（モバイルで入力中は再描画しない）
+                // データに変更がある場合のみ更新
+                if (oldStaffJson !== newStaffJson) {
                     staffMembers = newStaff;
                     localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
+                    console.log('スタッフデータを更新しました:', staffMembers);
 
                     // 入力中でない場合のみ再描画
                     const activeEl = document.activeElement;
@@ -1642,12 +1638,10 @@ async function syncData() {
                         renderStaffInputs();
                         renderCalendar();
                     }
-                } else {
-                    console.log('Supabaseのデータが空のため、ローカルデータを保持');
                 }
+            } else {
+                console.log('Supabaseのデータが空のため、ローカルデータを保持');
             }
-        } else {
-            console.log('バージョンが古いため、Supabaseからの同期をスキップ');
         }
 
         if (syncStatus) {
