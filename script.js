@@ -384,7 +384,7 @@ function setupStaffModalListeners() {
     if (addOtherBtn) {
         const newBtn = addOtherBtn.cloneNode(true);
         addOtherBtn.parentNode.replaceChild(newBtn, addOtherBtn);
-        newBtn.addEventListener('click', () => {
+        newBtn.addEventListener('click', async () => {
             const name = otherNameInput.value.trim();
             if (name) {
                 // 重複チェック
@@ -394,8 +394,18 @@ function setupStaffModalListeners() {
                     // ローカルストレージに保存
                     localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
 
-                    // Supabaseに必ず保存（全デバイス対応）
-                    saveStaffToSupabase();
+                    // Supabaseに必ず保存（全デバイス対応）- 完了を待つ
+                    try {
+                        updateSyncStatus('保存中...');
+                        await saveStaffToSupabase();
+                        console.log(`担当者「${name}」をSupabaseに保存完了`);
+                        updateSyncStatus('保存完了');
+                        setTimeout(() => updateSyncStatus(''), 2000);
+                    } catch (error) {
+                        console.error('Supabase保存エラー:', error);
+                        updateSyncStatus('保存エラー');
+                        setTimeout(() => updateSyncStatus(''), 3000);
+                    }
 
                     // カレンダーを再描画
                     renderCalendar();
@@ -467,7 +477,7 @@ function setupStaffEditModalListeners() {
     if (saveBtn) {
         const newSaveBtn = saveBtn.cloneNode(true);
         saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
-        newSaveBtn.addEventListener('click', () => {
+        newSaveBtn.addEventListener('click', async () => {
             const staffIndex = parseInt(document.getElementById('editStaffIndex').value);
             const newName = document.getElementById('editStaffName').value.trim();
 
@@ -477,8 +487,18 @@ function setupStaffEditModalListeners() {
                 // LocalStorageに保存
                 localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
 
-                // Supabaseに必ず保存（全デバイス対応）
-                saveStaffToSupabase();
+                // Supabaseに必ず保存（全デバイス対応）- 完了を待つ
+                try {
+                    updateSyncStatus('保存中...');
+                    await saveStaffToSupabase();
+                    console.log(`担当者「${newName}」をSupabaseに保存完了`);
+                    updateSyncStatus('保存完了');
+                    setTimeout(() => updateSyncStatus(''), 2000);
+                } catch (error) {
+                    console.error('Supabase保存エラー:', error);
+                    updateSyncStatus('保存エラー');
+                    setTimeout(() => updateSyncStatus(''), 3000);
+                }
 
                 // カレンダーを再描画
                 renderCalendar();
@@ -498,7 +518,7 @@ function setupStaffEditModalListeners() {
     if (deleteBtn) {
         const newDeleteBtn = deleteBtn.cloneNode(true);
         deleteBtn.parentNode.replaceChild(newDeleteBtn, deleteBtn);
-        newDeleteBtn.addEventListener('click', () => {
+        newDeleteBtn.addEventListener('click', async () => {
             const staffIndex = parseInt(document.getElementById('editStaffIndex').value);
             const staffName = staffMembers[staffIndex];
 
@@ -509,8 +529,18 @@ function setupStaffEditModalListeners() {
                 // LocalStorageに保存
                 localStorage.setItem('staffMembers', JSON.stringify(staffMembers));
 
-                // Supabaseに必ず保存（全デバイス対応）
-                saveStaffToSupabase();
+                // Supabaseに必ず保存（全デバイス対応）- 完了を待つ
+                try {
+                    updateSyncStatus('保存中...');
+                    await saveStaffToSupabase();
+                    console.log(`担当者「${staffName}」をSupabaseから削除完了`);
+                    updateSyncStatus('削除完了');
+                    setTimeout(() => updateSyncStatus(''), 2000);
+                } catch (error) {
+                    console.error('Supabase保存エラー:', error);
+                    updateSyncStatus('保存エラー');
+                    setTimeout(() => updateSyncStatus(''), 3000);
+                }
 
                 // カレンダーを再描画
                 renderCalendar();
@@ -1846,6 +1876,16 @@ window.editEvent = editEvent;
 window.editCampaign = editCampaign;
 
 // デバッグ用
+
+// ===================================
+// ユーティリティ関数
+// ===================================
+function updateSyncStatus(message) {
+    const syncStatus = document.getElementById('syncStatus');
+    if (syncStatus) {
+        syncStatus.textContent = message;
+    }
+}
 
 // ===================================
 // バックアップと復元機能
