@@ -775,13 +775,16 @@ function renderCalendar() {
 
                     console.log('Event title:', event.title, 'Length:', titleLength, 'Class:', titleClass);
 
+                    // 時間を HH:MM 形式にフォーマット（秒を削除）
+                    const formattedTime = event.time ? event.time.substring(0, 5) : '';
+
                     // 通常のイベント
                     html += `
                         <div class="${cellClass}"
                              style="background-color: ${event.color || 'transparent'};"
                              data-event-id="${event.id}">
                             <div class="${titleClass}">${event.title}</div>
-                            ${event.time ? `<div class="event-time">${event.time}</div>` : ''}
+                            ${formattedTime ? `<div class="event-time">${formattedTime}</div>` : ''}
                             ${event.note ? `<div class="event-note">${event.note}</div>` : ''}
                         </div>
                     `;
