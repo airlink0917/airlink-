@@ -93,11 +93,50 @@ main {
 
 /* メモセクション */
 .memo-section {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     padding: 15px;
     background: #f8f9fa;
     border-radius: 8px;
     border: 1px solid #e0e0e0;
+}
+
+/* カレンダー年月表示 */
+.calendar-month-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 15px;
+    padding: 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.month-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+    min-width: 150px;
+    text-align: center;
+}
+
+.month-nav-btn {
+    background: white;
+    color: #667eea;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: all 0.3s;
+}
+
+.month-nav-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    background: #f0f0f0;
 }
 
 .memo-header {
@@ -1284,7 +1323,8 @@ main {
     .btn-delete-staff,
     .btn-refresh,
     .staff-section,
-    .memo-section {
+    .memo-section,
+    .calendar-month-display {
         display: none;
     }
 

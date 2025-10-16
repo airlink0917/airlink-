@@ -158,7 +158,7 @@ function initializeUI() {
 // イベントリスナー
 // ===================================
 function setupEventListeners() {
-    // 月移動ボタン
+    // 月移動ボタン（ヘッダー）
     document.getElementById('prevMonth').addEventListener('click', () => {
         currentDate.setMonth(currentDate.getMonth() - 1);
         updateMonthDisplay();
@@ -170,6 +170,25 @@ function setupEventListeners() {
         updateMonthDisplay();
         renderCalendar();
     });
+
+    // 月移動ボタン（カレンダー上部）
+    const prevMonthBottom = document.getElementById('prevMonthBottom');
+    if (prevMonthBottom) {
+        prevMonthBottom.addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            updateMonthDisplay();
+            renderCalendar();
+        });
+    }
+
+    const nextMonthBottom = document.getElementById('nextMonthBottom');
+    if (nextMonthBottom) {
+        nextMonthBottom.addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            updateMonthDisplay();
+            renderCalendar();
+        });
+    }
 
     // 担当者設定ボタン（モーダルを開く）
     const addBtn = document.getElementById('addStaff');
@@ -940,7 +959,16 @@ function setupCellInteraction(cell, action) {
 function updateMonthDisplay() {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth() + 1;
-    document.getElementById('currentMonth').textContent = `${year}年${month}月`;
+    const monthText = `${year}年${month}月`;
+
+    // ヘッダーの年月表示を更新
+    document.getElementById('currentMonth').textContent = monthText;
+
+    // カレンダー上部の年月表示も更新
+    const currentMonthBottom = document.getElementById('currentMonthBottom');
+    if (currentMonthBottom) {
+        currentMonthBottom.textContent = monthText;
+    }
 }
 
 // ===================================
