@@ -1490,10 +1490,6 @@ function setupModalListeners() {
 // ===================================
 function saveEvents() {
     localStorage.setItem('scheduleEvents', JSON.stringify(events));
-    // 変更時に自動バックアップも作成
-    if (autoBackupInterval) {
-        createBackup();
-    }
 }
 
 function loadEvents() {
@@ -1517,11 +1513,6 @@ function saveStaffMembers(skipSupabase = false) {
     // モバイルの場合、またはスキップ指定の場合はSupabase保存をスキップ
     if (!skipSupabase && !isMobileDevice()) {
         saveStaffToSupabase();
-    }
-
-    // 変更時に自動バックアップも作成
-    if (autoBackupInterval) {
-        createBackup();
     }
 }
 
